@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Multi-Agent Data Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+    <!-- Hero Section -->
+    <div class="hero-section text-center mb-5">
+        <div class="hero-overlay">
+            <div class="container py-5">
+                <h1 class="display-4 fw-bold mb-4 animate__animated animate__fadeInDown">
+                    <i class="fas fa-robot text-primary me-3"></i>
+                    Multi-Agent Data Quality Platform
+                </h1>
+                <p class="lead mb-4 animate__animated animate__fadeInUp">
+                    Intelligence Artificielle Distribuée pour l'Analyse et le Nettoyage Automatisé de Données
+                </p>
+                <div class="d-flex justify-content-center gap-3 animate__animated animate__fadeInUp animate__delay-1s">
+                    <a href="/analyze/" class="btn btn-primary btn-lg">
+                        <i class="fas fa-chart-line me-2"></i>Analyser la Qualité
+                    </a>
+                    <a href="/run/" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-play-circle me-2"></i>Lancer le Pipeline
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques rapides -->
+    <div class="container mb-5">
+        <div class="row g-4 text-center">
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <i class="fas fa-database fa-3x text-primary mb-3"></i>
+                    <h3 class="h2 fw-bold">6+</h3>
+                    <p class="text-muted">Bases de données supportées</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <i class="fas fa-robot fa-3x text-success mb-3"></i>
+                    <h3 class="h2 fw-bold">5</h3>
+                    <p class="text-muted">Agents intelligents</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <i class="fas fa-magic fa-3x text-info mb-3"></i>
+                    <h3 class="h2 fw-bold">100%</h3>
+                    <p class="text-muted">Nettoyage automatisé</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-card">
+                    <i class="fas fa-brain fa-3x text-warning mb-3"></i>
+                    <h3 class="h2 fw-bold">IA</h3>
+                    <p class="text-muted">Recommandations intelligentes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Fonctionnalités -->
+    <div class="container mb-5">
+        <h2 class="text-center section-title mb-5">
+            <span class="gradient-text">Ce que notre plateforme fait</span>
+        </h2>
+        
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <h3>Connectivité Multi-DB</h3>
+                    <p>Connexion transparente à MySQL, PostgreSQL, SQL Server, Oracle et SQLite</p>
+                    <div class="db-badges">
+                        <span class="badge bg-primary">MySQL</span>
+                        <span class="badge bg-success">PostgreSQL</span>
+                        <span class="badge bg-danger">SQL Server</span>
+                        <span class="badge bg-warning">Oracle</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h3>Analyse Qualité</h3>
+                    <p>Détection intelligente des valeurs manquantes, doublons et outliers</p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check-circle text-success"></i> Complétude</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Unicité</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Validité</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-6 col-lg-4">
+                <div class="feature-card h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-broom"></i>
+                    </div>
+                    <h3>Nettoyage Automatisé</h3>
+                    <p>Stratégies de nettoyage adaptatives basées sur l'analyse</p>
+                    <div class="cleaning-stats">
+                        <span class="badge bg-info">Imputation</span>
+                        <span class="badge bg-info">Standardisation</span>
+                        <span class="badge bg-info">Déduplication</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture des Agents -->
+    <div class="container mb-5">
+        <h2 class="text-center section-title mb-5">
+            <span class="gradient-text">Architecture Multi-Agents</span>
+        </h2>
+        
+        <div class="architecture-grid">
+            <div class="agent-flow">
+                <div class="agent-node extraction">
+                    <i class="fas fa-database"></i>
+                    <h4>ExtractionAgent</h4>
+                </div>
+                <div class="agent-arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="agent-node quality">
+                    <i class="fas fa-chart-bar"></i>
+                    <h4>QualityAgent</h4>
+                </div>
+                <div class="agent-arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="agent-node cleaning">
+                    <i class="fas fa-broom"></i>
+                    <h4>CleaningAgent</h4>
+                </div>
+                <div class="agent-arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="agent-node storage">
+                    <i class="fas fa-database"></i>
+                    <h4>StorageAgent</h4>
+                </div>
+            </div>
+            
+            <div class="llm-orchestrator mt-4">
+                <div class="agent-node llm">
+                    <i class="fas fa-brain"></i>
+                    <h4>LLMAgent</h4>
+                    <p>Décisions intelligentes</p>
+                </div>
+                <div class="agent-node orchestrator">
+                    <i class="fas fa-sitemap"></i>
+                    <h4>Orchestrator</h4>
+                    <p>Coordination du pipeline</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comment utiliser -->
+    <div class="container mb-5">
+        <h2 class="text-center section-title mb-5">
+            <span class="gradient-text">Comment utiliser</span>
+        </h2>
+        
+        <div class="row steps">
+            <div class="col-md-4 step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Analyser la qualité</h4>
+                    <p>Connectez votre base de données et obtenez un rapport détaillé</p>
+                    <a href="/analyze/" class="btn btn-outline-primary btn-sm">
+                        Commencer <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-4 step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Examiner les résultats</h4>
+                    <p>Visualisez les problèmes de qualité et les suggestions IA</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4 step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Lancer le pipeline</h4>
+                    <p>Exécutez le nettoyage automatisé complet</p>
+                    <a href="/run/" class="btn btn-outline-primary btn-sm">
+                        Démarrer <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technologies utilisées -->
+    <div class="container mb-5">
+        <h2 class="text-center section-title mb-5">
+            <span class="gradient-text">Technologies utilisées</span>
+        </h2>
+        
+        <div class="tech-stack">
+            <div class="tech-item">
+                <i class="fab fa-python"></i>
+                <span>Python</span>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-django"></i>
+                <span>Django</span>
+            </div>
+            <div class="tech-item">
+                <i class="fas fa-table"></i>
+                <span>Pandas</span>
+            </div>
+            <div class="tech-item">
+                <i class="fas fa-database"></i>
+                <span>SQLAlchemy</span>
+            </div>
+            <div class="tech-item">
+                <i class="fas fa-microchip"></i>
+                <span>Ollama</span>
+            </div>
+            <div class="tech-item">
+                <i class="fas fa-network-wired"></i>
+                <span>Multi-Agent</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="container mb-5">
+        <div class="cta-section text-center">
+            <h3 class="mb-4">Prêt à optimiser vos données ?</h3>
+            <p class="mb-4">Commencez dès maintenant à analyser et nettoyer vos bases de données</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/analyze/" class="btn btn-primary btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>Analyser maintenant
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Styles supplémentaires pour la page d'accueil */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0 0 50px 50px;
+    margin-top: -2rem;
+}
+
+.hero-overlay {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 50px 50px;
+}
+
+.stat-card {
+    background: white;
+    padding: 2rem 1rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-10px);
+}
+
+.section-title {
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.section-title:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: bold;
+}
+
+.feature-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+.feature-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.feature-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.feature-list li {
+    margin: 0.5rem 0;
+}
+
+.architecture-grid {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.agent-flow {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.agent-node {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    min-width: 150px;
+}
+
+.agent-node i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.agent-node h4 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.agent-node.extraction { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.agent-node.quality { background: linear-gradient(135deg, #10b981, #059669); }
+.agent-node.cleaning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.agent-node.storage { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.agent-node.llm { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.agent-node.orchestrator { background: linear-gradient(135deg, #ec4899, #db2777); }
+
+.agent-arrow {
+    font-size: 2rem;
+    color: #cbd5e1;
+}
+
+.llm-orchestrator {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.steps {
+    position: relative;
+}
+
+.step-item {
+    position: relative;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.step-number {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.tech-item {
+    background: white;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.tech-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.tech-item i {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.cta-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+}
+
+@media (max-width: 768px) {
+    .agent-flow {
+        flex-direction: column;
+    }
+    
+    .agent-arrow {
+        transform: rotate(90deg);
+    }
+    
+    .step-item {
+        margin-bottom: 2rem;
+    }
+    
+    .cta-section {
+        padding: 2rem;
+    }
+}
+</style>
+
+<!-- Animate.css pour les animations -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+{% endblock %}

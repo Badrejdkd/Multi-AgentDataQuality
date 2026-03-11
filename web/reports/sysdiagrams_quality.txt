@@ -1,0 +1,1 @@
+{'rows': 0, 'columns': 5, 'missing_values': {'name': 0, 'principal_id': 0, 'diagram_id': 0, 'version': 0, 'definition': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}

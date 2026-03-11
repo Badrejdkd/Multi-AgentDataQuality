@@ -1,0 +1,1 @@
+{'rows': 0, 'columns': 11, 'missing_values': {'Id': 0, 'DateSoumission': 0, 'Statut': 0, 'MessageMotivation': 0, 'CandidatId': 0, 'OffreEmploiId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}

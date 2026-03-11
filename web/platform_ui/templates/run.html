@@ -1,0 +1,594 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Multi-Agent Data Platform{% endblock %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Data Platform - Run Pipeline</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .pipeline-container {
+            width: 100%;
+            max-width: 600px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .pipeline-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            padding: 30px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        .card-header h1 {
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header i {
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.2));
+        }
+
+        .card-body {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-label i {
+            color: #28a745;
+            margin-right: 8px;
+            width: 20px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            z-index: 1;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #28a745;
+            box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.15);
+        }
+
+        .form-control::placeholder {
+            color: #a0aec0;
+            font-size: 0.95rem;
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a0aec0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 45px;
+        }
+
+        .btn-pipeline {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-pipeline:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn-pipeline:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-pipeline:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn-pipeline i {
+            margin-right: 10px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+
+        .result-card {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #28a745;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .result-card h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .result-card h3 i {
+            color: #28a745;
+            margin-right: 10px;
+        }
+
+        .result-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .result-content.success {
+            border-left: 4px solid #28a745;
+        }
+
+        .result-content.error {
+            border-left: 4px solid #dc3545;
+        }
+
+        .quick-options {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .quick-options h4 {
+            color: #4a5568;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badge {
+            padding: 8px 16px;
+            background: #edf2f7;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .badge:hover {
+            background: #28a745;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+        }
+
+        .badge i {
+            margin-right: 5px;
+            font-size: 0.8rem;
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 25px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: #28a745;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 25px;
+            }
+            
+            .card-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .form-control {
+                padding: 12px 12px 12px 40px;
+            }
+        }
+
+        /* Tooltip personnalisé */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #2d3748;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Animation de chargement */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="pipeline-container">
+        <div class="pipeline-card">
+            <div class="card-header">
+                <i class="fas fa-play-circle"></i>
+                <h1>Run Data Pipeline</h1>
+            </div>
+            
+            <div class="card-body">
+                <form method="POST" action="/run/" id="pipelineForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-server"></i>
+                            Database Type
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-database input-icon"></i>
+                            <select name="db_type" class="form-control" required>
+                                <option value="" disabled selected>Select database type</option>
+                                <option value="mysql">MySQL</option>
+                                <option value="postgresql">PostgreSQL</option>
+                                <option value="sql_server">SQL Server</option>
+                                <option value="oracle">Oracle</option>
+                                <option value="sqlite">SQLite</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            Database Name
+                        </label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-database input-icon"></i>
+                            <input type="text" name="db_name" class="form-control" 
+                                   placeholder="e.g., enterprise, sales_db" required>
+                        </div>
+                    </div>
+
+                    <!-- Options rapides -->
+                    <div class="quick-options">
+                        <h4><i class="fas fa-bolt me-2"></i>Quick Options</h4>
+                        <div class="badge-container">
+                            <span class="badge" onclick="fillForm('mysql', 'sales_db')">
+                                <i class="fas fa-database"></i> MySQL - sales_db
+                            </span>
+                            <span class="badge" onclick="fillForm('postgresql', 'analytics')">
+                                <i class="fas fa-database"></i> PostgreSQL - analytics
+                            </span>
+                            <span class="badge" onclick="fillForm('sqlite', 'local.db')">
+                                <i class="fas fa-database"></i> SQLite - local.db
+                            </span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-pipeline" id="submitBtn">
+                        <i class="fas fa-play"></i>
+                        Execute Pipeline
+                        <span class="spinner" id="spinner" style="display: none;"></span>
+                    </button>
+                </form>
+
+                <!-- Résultat -->
+                {% if result %}
+                <div class="result-card">
+                    <h3>
+                        <i class="fas {% if 'error' in result|lower %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                        Pipeline Result
+                    </h3>
+                    <div class="result-content {% if 'error' in result|lower %}error{% else %}success{% endif %}">
+                        {{ result }}
+                    </div>
+                    
+                    {% if 'error' not in result|lower %}
+                    <div style="margin-top: 20px; text-align: center;">
+                        <a href="/analyze/" class="btn-pipeline" style="display: inline-block; width: auto; padding: 10px 25px; text-decoration: none;">
+                            <i class="fas fa-chart-line"></i> View Analysis
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pied de page -->
+        <div class="footer-links">
+            <a href="/"><i class="fas fa-home"></i> Home</a>
+            <span style="color: rgba(255,255,255,0.3);">|</span>
+            <a href="/analyze/"><i class="fas fa-chart-line"></i> Analyze</a>
+            <span style="color: rgba(255,255,255,0.3);">|</span>
+            <a href="#" onclick="showHelp()"><i class="fas fa-question-circle"></i> Help</a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Remplir automatiquement le formulaire avec les options rapides
+        function fillForm(dbType, dbName) {
+            const dbTypeSelect = document.querySelector('select[name="db_type"]');
+            const dbNameInput = document.querySelector('input[name="db_name"]');
+            
+            if (dbTypeSelect) {
+                // Trouver et sélectionner l'option correspondante
+                for (let option of dbTypeSelect.options) {
+                    if (option.value === dbType) {
+                        option.selected = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (dbNameInput) {
+                dbNameInput.value = dbName;
+            }
+            
+            // Animation de confirmation
+            dbNameInput.style.borderColor = '#28a745';
+            setTimeout(() => {
+                dbNameInput.style.borderColor = '#e2e8f0';
+            }, 1000);
+        }
+
+        // Gestion de la soumission du formulaire
+        document.getElementById('pipelineForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('spinner');
+            
+            // Validation
+            const dbType = document.querySelector('select[name="db_type"]').value;
+            const dbName = document.querySelector('input[name="db_name"]').value;
+            
+            if (!dbType || !dbName) {
+                e.preventDefault();
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Afficher le spinner et désactiver le bouton
+            submitBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+        });
+
+        // Aide contextuelle
+        function showHelp() {
+            alert(
+                'How to use the Pipeline:\n\n' +
+                '1. Select your database type\n' +
+                '2. Enter the database name\n' +
+                '3. Click "Execute Pipeline"\n\n' +
+                'The pipeline will:\n' +
+                '• Extract data from your database\n' +
+                '• Analyze data quality\n' +
+                '• Clean and standardize data\n' +
+                '• Store processed results\n' +
+                '• Provide quality recommendations'
+            );
+        }
+
+        // Animation d'entrée
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.pipeline-card, .result-card');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+
+        // Sauvegarde automatique des dernières valeurs (optionnel)
+        const lastDbType = localStorage.getItem('lastDbType');
+        const lastDbName = localStorage.getItem('lastDbName');
+        
+        if (lastDbType && lastDbName) {
+            const confirmRestore = confirm('Restore last used database settings?');
+            if (confirmRestore) {
+                fillForm(lastDbType, lastDbName);
+            }
+        }
+        
+        // Sauvegarder les valeurs après soumission réussie
+        document.getElementById('pipelineForm').addEventListener('submit', function() {
+            const dbType = document.querySelector('select[name="db_type"]').value;
+            const dbName = document.querySelector('input[name="db_name"]').value;
+            
+            localStorage.setItem('lastDbType', dbType);
+            localStorage.setItem('lastDbName', dbName);
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

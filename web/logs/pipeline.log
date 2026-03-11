@@ -1,0 +1,304 @@
+2026-03-10 22:09:51,221 - WARNING - Not Found: /favicon.ico
+2026-03-10 22:10:09,409 - INFO - Initializing Multi-Agent System
+2026-03-10 22:10:09,522 - ERROR - Internal Server Error: /run/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 29, in run_pipeline
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:11:06,335 - INFO - Initializing Multi-Agent System
+2026-03-10 22:11:06,351 - ERROR - Internal Server Error: /run/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 29, in run_pipeline
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:12:08,039 - INFO - Initializing Multi-Agent System
+2026-03-10 22:12:08,617 - INFO - Starting pipeline
+2026-03-10 22:12:08,832 - INFO - Tables detected: ['__EFMigrationsHistory', 'Candidats', 'Entreprises', 'Competences', 'Formations', 'Messages', 'Publications', 'OffresEmploi', 'Commentaires', 'Candidatures', 'sysdiagrams']
+2026-03-10 22:12:14,418 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-10 22:12:40,687 - INFO - Initializing Multi-Agent System
+2026-03-10 22:12:41,144 - INFO - Starting pipeline
+2026-03-10 22:12:41,243 - INFO - Tables detected: ['__EFMigrationsHistory', 'Candidats', 'Entreprises', 'Competences', 'Formations', 'Messages', 'Publications', 'OffresEmploi', 'Commentaires', 'Candidatures', 'sysdiagrams']
+2026-03-10 22:12:41,252 - INFO - Initializing Multi-Agent System
+2026-03-10 22:12:41,693 - INFO - Starting pipeline
+2026-03-10 22:12:41,706 - INFO - Tables detected: ['__EFMigrationsHistory', 'Candidats', 'Entreprises', 'Competences', 'Formations', 'Messages', 'Publications', 'OffresEmploi', 'Commentaires', 'Candidatures', 'sysdiagrams']
+2026-03-10 22:13:05,028 - WARNING - Not Found: /favicon.ico
+2026-03-10 22:13:10,104 - INFO - Initializing Multi-Agent System
+2026-03-10 22:13:10,663 - INFO - Starting pipeline
+2026-03-10 22:13:10,737 - INFO - Tables detected: ['__EFMigrationsHistory', 'Candidats', 'Entreprises', 'Competences', 'Formations', 'Messages', 'Publications', 'OffresEmploi', 'Commentaires', 'Candidatures', 'sysdiagrams']
+2026-03-10 22:13:11,027 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-10 22:13:57,340 - INFO - Tables selected for cleaning: []
+2026-03-10 22:13:57,340 - INFO - Processing table: __EFMigrationsHistory
+2026-03-10 22:13:57,361 - INFO - Quality report for __EFMigrationsHistory: {'rows': 3, 'columns': 2, 'missing_values': {'MigrationId': 0, 'ProductVersion': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(100.0)}
+2026-03-10 22:13:57,362 - INFO - Processing table: Candidats
+2026-03-10 22:13:57,368 - INFO - Quality report for Candidats: {'rows': 0, 'columns': 14, 'missing_values': {'Id': 0, 'Nom': 0, 'Prenom': 0, 'Email': 0, 'MotDePasse': 0, 'PhotoProfil': 0, 'TitreProfil': 0, 'Bio': 0, 'DateInscription': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,368 - INFO - Processing table: Entreprises
+2026-03-10 22:13:57,386 - INFO - Quality report for Entreprises: {'rows': 1, 'columns': 12, 'missing_values': {'Id': 0, 'Nom': 0, 'Secteur': 0, 'Description': 0, 'Logo': 0, 'DateCreation': 0, 'CreerPar': 1, 'EstSupprime': 0, 'DateSuppression': 1, 'SupprimerPar': 1, 'Email': 0, 'MotDePasse': 0}, 'duplicates': np.int64(0), 'outliers': {'Id': np.int64(0)}, 'quality_score': np.float64(75.0)}
+2026-03-10 22:13:57,386 - INFO - Processing table: Competences
+2026-03-10 22:13:57,393 - INFO - Quality report for Competences: {'rows': 0, 'columns': 9, 'missing_values': {'Id': 0, 'Nom': 0, 'Niveau': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,393 - INFO - Processing table: Formations
+2026-03-10 22:13:57,400 - INFO - Quality report for Formations: {'rows': 0, 'columns': 12, 'missing_values': {'Id': 0, 'Diplome': 0, 'Ecole': 0, 'DateDebut': 0, 'DateFin': 0, 'Description': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,401 - INFO - Processing table: Messages
+2026-03-10 22:13:57,408 - INFO - Quality report for Messages: {'rows': 0, 'columns': 10, 'missing_values': {'Id': 0, 'Contenu': 0, 'DateEnvoi': 0, 'ExpediteurId': 0, 'DestinataireId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,408 - INFO - Processing table: Publications
+2026-03-10 22:13:57,417 - INFO - Quality report for Publications: {'rows': 0, 'columns': 10, 'missing_values': {'Id': 0, 'Contenu': 0, 'DatePublication': 0, 'Image': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,417 - INFO - Processing table: OffresEmploi
+2026-03-10 22:13:57,432 - INFO - Quality report for OffresEmploi: {'rows': 1, 'columns': 14, 'missing_values': {'Id': 0, 'Titre': 0, 'Description': 0, 'TypeContrat': 0, 'Lieu': 0, 'Salaire': 0, 'DatePublication': 0, 'Statut': 0, 'EntrepriseId': 0, 'DateCreation': 0, 'CreerPar': 1, 'EstSupprime': 0, 'DateSuppression': 1, 'SupprimerPar': 1}, 'duplicates': np.int64(0), 'outliers': {'Id': np.int64(0), 'EntrepriseId': np.int64(0)}, 'quality_score': np.float64(78.57)}
+2026-03-10 22:13:57,432 - INFO - Processing table: Commentaires
+2026-03-10 22:13:57,438 - INFO - Quality report for Commentaires: {'rows': 0, 'columns': 10, 'missing_values': {'Id': 0, 'Contenu': 0, 'DateCommentaire': 0, 'PublicationId': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,438 - INFO - Processing table: Candidatures
+2026-03-10 22:13:57,445 - INFO - Quality report for Candidatures: {'rows': 0, 'columns': 11, 'missing_values': {'Id': 0, 'DateSoumission': 0, 'Statut': 0, 'MessageMotivation': 0, 'CandidatId': 0, 'OffreEmploiId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,445 - INFO - Processing table: sysdiagrams
+2026-03-10 22:13:57,452 - INFO - Quality report for sysdiagrams: {'rows': 0, 'columns': 5, 'missing_values': {'name': 0, 'principal_id': 0, 'diagram_id': 0, 'version': 0, 'definition': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:13:57,452 - INFO - Pipeline finished successfully
+2026-03-10 22:21:40,281 - INFO - C:\Users\OMEN\Desktop\multiagent_data_platform\web\config\urls.py changed, reloading.
+2026-03-10 22:22:32,156 - INFO - C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py changed, reloading.
+2026-03-10 22:27:05,075 - ERROR - Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 16, in home
+    return render(request, "home.html")
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: home.html
+2026-03-10 22:29:58,608 - ERROR - Internal Server Error: /run/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 50, in run_pipeline
+    return render(request, "run.html", {"result": result})
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: run.html
+2026-03-10 22:30:03,556 - ERROR - Internal Server Error: /run/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 50, in run_pipeline
+    return render(request, "run.html", {"result": result})
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: run.html
+2026-03-10 22:32:54,945 - ERROR - Internal Server Error: /run/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 50, in run_pipeline
+    return render(request, "run.html", {"result": result})
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: run.html
+2026-03-10 22:33:09,952 - INFO - Initializing Multi-Agent System
+2026-03-10 22:39:27,476 - ERROR - Internal Server Error: /run/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 50, in run_pipeline
+    return render(request, "run.html", {"result": result})
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: run.html
+2026-03-10 22:42:12,750 - INFO - Initializing Multi-Agent System
+2026-03-10 22:42:12,766 - ERROR - Internal Server Error: /analyze/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 28, in analyze_quality
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:46:17,398 - INFO - Initializing Multi-Agent System
+2026-03-10 22:47:26,542 - INFO - Initializing Multi-Agent System
+2026-03-10 22:47:26,564 - ERROR - Internal Server Error: /analyze/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 28, in analyze_quality
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:47:50,369 - INFO - Initializing Multi-Agent System
+2026-03-10 22:47:50,385 - ERROR - Internal Server Error: /analyze/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 28, in analyze_quality
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:47:54,668 - INFO - Initializing Multi-Agent System
+2026-03-10 22:47:54,687 - ERROR - Internal Server Error: /analyze/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 28, in analyze_quality
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:49:02,255 - INFO - Initializing Multi-Agent System
+2026-03-10 22:49:02,270 - ERROR - Internal Server Error: /analyze/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 28, in analyze_quality
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:49:16,832 - INFO - Initializing Multi-Agent System
+2026-03-10 22:49:16,852 - ERROR - Internal Server Error: /analyze/
+Traceback (most recent call last):
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\venv\Lib\site-packages\django\core\handlers\base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py", line 28, in analyze_quality
+    orchestrator = Orchestrator(db_type, db_name)
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\pipeline\orchestrator.py", line 36, in __init__
+    self.extractor = ExtractionAgent(db_type, db_name)
+                     ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 25, in __init__
+    self.engine = self.connect_to_db()
+                  ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\OMEN\Desktop\multiagent_data_platform\agents\extraction_agent.py", line 46, in connect_to_db
+    raise ValueError("Unsupported database type")
+ValueError: Unsupported database type
+2026-03-10 22:50:07,066 - INFO - Initializing Multi-Agent System
+2026-03-10 22:52:13,819 - INFO - Initializing Multi-Agent System
+2026-03-10 22:52:33,599 - INFO - Initializing Multi-Agent System
+2026-03-10 22:55:34,837 - INFO - Initializing Multi-Agent System
+2026-03-10 22:55:35,424 - INFO - Starting pipeline
+2026-03-10 22:55:35,568 - INFO - Tables detected: ['__EFMigrationsHistory', 'Candidats', 'Entreprises', 'Competences', 'Formations', 'Messages', 'Publications', 'OffresEmploi', 'Commentaires', 'Candidatures', 'sysdiagrams']
+2026-03-10 22:55:38,759 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-10 22:56:28,565 - INFO - Tables selected for cleaning: []
+2026-03-10 22:56:28,565 - INFO - Processing table: __EFMigrationsHistory
+2026-03-10 22:56:28,577 - INFO - Quality report for __EFMigrationsHistory: {'rows': 3, 'columns': 2, 'missing_values': {'MigrationId': 0, 'ProductVersion': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(100.0)}
+2026-03-10 22:56:28,577 - INFO - Processing table: Candidats
+2026-03-10 22:56:28,582 - INFO - Quality report for Candidats: {'rows': 0, 'columns': 14, 'missing_values': {'Id': 0, 'Nom': 0, 'Prenom': 0, 'Email': 0, 'MotDePasse': 0, 'PhotoProfil': 0, 'TitreProfil': 0, 'Bio': 0, 'DateInscription': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,583 - INFO - Processing table: Entreprises
+2026-03-10 22:56:28,591 - INFO - Quality report for Entreprises: {'rows': 1, 'columns': 12, 'missing_values': {'Id': 0, 'Nom': 0, 'Secteur': 0, 'Description': 0, 'Logo': 0, 'DateCreation': 0, 'CreerPar': 1, 'EstSupprime': 0, 'DateSuppression': 1, 'SupprimerPar': 1, 'Email': 0, 'MotDePasse': 0}, 'duplicates': np.int64(0), 'outliers': {'Id': np.int64(0)}, 'quality_score': np.float64(75.0)}
+2026-03-10 22:56:28,591 - INFO - Processing table: Competences
+2026-03-10 22:56:28,594 - INFO - Quality report for Competences: {'rows': 0, 'columns': 9, 'missing_values': {'Id': 0, 'Nom': 0, 'Niveau': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,594 - INFO - Processing table: Formations
+2026-03-10 22:56:28,600 - INFO - Quality report for Formations: {'rows': 0, 'columns': 12, 'missing_values': {'Id': 0, 'Diplome': 0, 'Ecole': 0, 'DateDebut': 0, 'DateFin': 0, 'Description': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,600 - INFO - Processing table: Messages
+2026-03-10 22:56:28,606 - INFO - Quality report for Messages: {'rows': 0, 'columns': 10, 'missing_values': {'Id': 0, 'Contenu': 0, 'DateEnvoi': 0, 'ExpediteurId': 0, 'DestinataireId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,606 - INFO - Processing table: Publications
+2026-03-10 22:56:28,612 - INFO - Quality report for Publications: {'rows': 0, 'columns': 10, 'missing_values': {'Id': 0, 'Contenu': 0, 'DatePublication': 0, 'Image': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,612 - INFO - Processing table: OffresEmploi
+2026-03-10 22:56:28,627 - INFO - Quality report for OffresEmploi: {'rows': 1, 'columns': 14, 'missing_values': {'Id': 0, 'Titre': 0, 'Description': 0, 'TypeContrat': 0, 'Lieu': 0, 'Salaire': 0, 'DatePublication': 0, 'Statut': 0, 'EntrepriseId': 0, 'DateCreation': 0, 'CreerPar': 1, 'EstSupprime': 0, 'DateSuppression': 1, 'SupprimerPar': 1}, 'duplicates': np.int64(0), 'outliers': {'Id': np.int64(0), 'EntrepriseId': np.int64(0)}, 'quality_score': np.float64(78.57)}
+2026-03-10 22:56:28,627 - INFO - Processing table: Commentaires
+2026-03-10 22:56:28,634 - INFO - Quality report for Commentaires: {'rows': 0, 'columns': 10, 'missing_values': {'Id': 0, 'Contenu': 0, 'DateCommentaire': 0, 'PublicationId': 0, 'CandidatId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,635 - INFO - Processing table: Candidatures
+2026-03-10 22:56:28,642 - INFO - Quality report for Candidatures: {'rows': 0, 'columns': 11, 'missing_values': {'Id': 0, 'DateSoumission': 0, 'Statut': 0, 'MessageMotivation': 0, 'CandidatId': 0, 'OffreEmploiId': 0, 'DateCreation': 0, 'CreerPar': 0, 'EstSupprime': 0, 'DateSuppression': 0, 'SupprimerPar': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,642 - INFO - Processing table: sysdiagrams
+2026-03-10 22:56:28,650 - INFO - Quality report for sysdiagrams: {'rows': 0, 'columns': 5, 'missing_values': {'name': 0, 'principal_id': 0, 'diagram_id': 0, 'version': 0, 'definition': 0}, 'duplicates': np.int64(0), 'outliers': {}, 'quality_score': np.float64(nan)}
+2026-03-10 22:56:28,650 - INFO - Pipeline finished successfully
+2026-03-10 22:57:52,954 - INFO - Initializing Multi-Agent System
+2026-03-10 23:02:23,267 - INFO - C:\Users\OMEN\Desktop\multiagent_data_platform\web\platform_ui\views.py changed, reloading.
+2026-03-10 23:03:56,025 - INFO - C:\Users\OMEN\Desktop\multiagent_data_platform\web\config\urls.py changed, reloading.
+2026-03-10 23:04:21,065 - WARNING - Not Found: /llm_tables
+2026-03-10 23:05:40,297 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-10 23:05:50,848 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-10 23:06:03,249 - INFO - HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+2026-03-10 23:07:47,494 - INFO - Initializing Multi-Agent System
+2026-03-10 23:13:25,454 - WARNING - Not Found: /favicon.ico
+2026-03-10 23:16:00,930 - INFO - Initializing Multi-Agent System
