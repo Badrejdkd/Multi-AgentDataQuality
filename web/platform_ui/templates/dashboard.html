@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}📊 Dashboard{% endblock %}
+{% block content %}
+<div class="section-title">Vue d'ensemble</div>
+<p class="section-sub">Système multi-agents · 4 agents spécialisés</p>
+
+<div class="grid-4">
+  <div class="stat-card"><div class="stat-label">Tables</div><div class="stat-value" style="color:var(--accent)">{{ tables|length }}</div><div class="stat-sub">sources disponibles</div></div>
+  <div class="stat-card"><div class="stat-label">Fichiers Raw</div><div class="stat-value" style="color:var(--yellow)">{{ raw_count }}</div><div class="stat-sub">CSV extraits</div></div>
+  <div class="stat-card"><div class="stat-label">Fichiers Cleaned</div><div class="stat-value" style="color:var(--green)">{{ cleaned_count }}</div><div class="stat-sub">CSV nettoyés</div></div>
+  <div class="stat-card"><div class="stat-label">Rapports</div><div class="stat-value" style="color:var(--accent2)">{{ report_count }}</div><div class="stat-sub">JSON générés</div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">🤖 Agents disponibles</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:8px">
+        <span style="font-size:1.3rem">📥</span>
+        <div><div style="font-weight:600">ExtractionAgent</div><div style="font-size:.8rem;color:var(--text-muted)">Connexion BDD · Export CSV</div></div>
+        <span class="badge badge-green" style="margin-left:auto">actif</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:8px">
+        <span style="font-size:1.3rem">🧹</span>
+        <div><div style="font-weight:600">CleaningAgent</div><div style="font-size:.8rem;color:var(--text-muted)">Doublons · Manquants · Normalisation</div></div>
+        <span class="badge badge-green" style="margin-left:auto">actif</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:8px">
+        <span style="font-size:1.3rem">✅</span>
+        <div><div style="font-weight:600">QualityAgent</div><div style="font-size:.8rem;color:var(--text-muted)">Score · Outliers · Rapport JSON</div></div>
+        <span class="badge badge-green" style="margin-left:auto">actif</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:8px">
+        <span style="font-size:1.3rem">💾</span>
+        <div><div style="font-weight:600">StorageAgent</div><div style="font-size:.8rem;color:var(--text-muted)">Raw / Cleaned / Reports</div></div>
+        <span class="badge badge-green" style="margin-left:auto">actif</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">⚡ Pipeline rapide</div>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px">Lance extraction → qualité → nettoyage → sauvegarde en un clic.</p>
+    <div class="form-group">
+      <label class="form-label">Tables à traiter</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        {% for t in tables %}
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" class="quick-table" value="{{ t }}" checked style="accent-color:var(--accent)"> {{ t }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary" id="quick-btn" onclick="quickRun()" style="width:100%">⚡ Exécuter le pipeline</button>
+    <div id="quick-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">📋 Derniers logs</div>
+  <div class="log-box">
+    {% if log_lines %}{% for line in log_lines %}<div>{{ line }}</div>{% endfor %}
+    {% else %}<div style="color:var(--text-muted)">Aucun log. Lancez un pipeline pour commencer.</div>{% endif %}
+  </div>
+</div>
+
+<script>
+async function quickRun() {
+  const btn = document.getElementById('quick-btn');
+  const res = document.getElementById('quick-result');
+  const selected = [...document.querySelectorAll('.quick-table:checked')].map(e => e.value);
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Traitement…';
+  const fd = new FormData();
+  selected.forEach(t => fd.append('tables', t));
+  const r = await fetch("{% url 'run_pipeline' %}", {method:'POST', body:fd});
+  const data = await r.json();
+  btn.disabled = false; btn.innerHTML = '⚡ Exécuter le pipeline';
+  if (data.success) {
+    let html = '<div class="alert alert-success">✅ Pipeline terminé !</div><div class="table-wrap"><table class="data-table"><thead><tr><th>Table</th><th>Lignes</th><th>Score</th><th>Dups</th><th>Manquants</th></tr></thead><tbody>';
+    data.results.forEach(r => {
+      const cls = r.quality_score >= 80 ? 'green' : r.quality_score >= 60 ? 'yellow' : 'red';
+      html += `<tr><td><b>${r.table}</b></td><td>${r.rows}</td><td><span class="badge badge-${cls}">${r.quality_score}%</span></td><td>${r.duplicates_removed}</td><td>${r.missing_filled}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+    res.innerHTML = html;
+    setTimeout(() => location.reload(), 3000);
+  }
+}
+</script>
+{% endblock %}

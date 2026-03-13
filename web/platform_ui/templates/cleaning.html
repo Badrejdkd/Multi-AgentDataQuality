@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Cleaning{% endblock %}
+{% block topbar_title %}🧹 Cleaning Agent{% endblock %}
+{% block content %}
+
+<div class="section-title">Agent de Nettoyage</div>
+<p class="section-sub">Supprime les doublons, remplit les valeurs manquantes, normalise le texte.</p>
+
+<!-- Alerte si aucune table disponible -->
+{% if not raw_files %}
+<div class="alert alert-info" style="margin-bottom:20px">
+  ⚠️ Aucun fichier raw disponible. 
+  <a href="{% url 'extraction' %}" style="color:var(--accent);font-weight:600">
+    Lancez d'abord une extraction →
+  </a>
+  ou entrez manuellement le nom d'une table ci-dessous.
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <!-- Config -->
+  <div class="card">
+    <div class="card-title">⚙️ Sélection de la table</div>
+
+    <!-- Onglets : choisir depuis liste ou saisie manuelle -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-primary"  id="tab-list"   onclick="switchTab('list')"   style="flex:1;padding:8px">📋 Depuis la liste</button>
+      <button class="btn btn-outline"  id="tab-manual" onclick="switchTab('manual')" style="flex:1;padding:8px">✏️ Saisie manuelle</button>
+    </div>
+
+    <!-- TAB 1 : liste des tables raw disponibles -->
+    <div id="panel-list">
+      {% if raw_files %}
+        <div class="form-group">
+          <label class="form-label">Tables extraites disponibles (data/raw/)</label>
+          <div style="display:flex;flex-direction:column;gap:8px" id="table-list-items">
+            {% for t in raw_files %}
+            <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:2px solid transparent"
+                   class="table-item" onclick="selectTable('{{ t }}', this)">
+              <input type="radio" name="table_radio" value="{{ t }}" style="accent-color:var(--accent)">
+              <span style="flex:1;font-weight:600">{{ t }}</span>
+              <span class="badge badge-green">✅ raw dispo</span>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div style="padding:20px;text-align:center;color:var(--text-muted);background:var(--surface2);border-radius:8px">
+          <div style="font-size:2rem;margin-bottom:8px">📭</div>
+          Aucun fichier extrait.<br>
+          <a href="{% url 'extraction' %}" style="color:var(--accent)">Faire une extraction d'abord</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- TAB 2 : saisie manuelle -->
+    <div id="panel-manual" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Nom de la table</label>
+        <input type="text" class="form-control" id="manual-table"
+               placeholder="ex: customers, orders, products…"
+               oninput="updateSelectedTable(this.value)">
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">
+          Le fichier <code>data/raw/[nom].csv</code> doit exister.
+        </div>
+      </div>
+
+      <!-- Connexion BDD pour extraire à la volée -->
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:12px">
+        <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:8px">
+          Ou extraire depuis la BDD avant de nettoyer :
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <select class="form-control" id="db-type-clean" style="margin-bottom:8px">
+            {% for t in db_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+          <input type="text" class="form-control" id="db-name-clean"
+                 placeholder="Nom/chemin BDD" value="test.db.sqlite">
+        </div>
+        <button class="btn btn-outline" onclick="extractThenClean()" style="width:100%;padding:8px">
+          📥 Extraire puis nettoyer
+        </button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Table sélectionnée (affichage) -->
+    <div style="padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:16px">
+      <div style="font-size:.75rem;color:var(--text-muted)">TABLE SÉLECTIONNÉE</div>
+      <div id="selected-display" style="font-weight:600;color:var(--accent);font-size:1.1rem;margin-top:4px">
+        — aucune —
+      </div>
+    </div>
+
+    <!-- Opérations -->
+    <div style="margin-bottom:16px">
+      <label class="form-label">Opérations</label>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="op-dedup" checked style="accent-color:var(--accent)">
+          🗑️ Suppression des doublons
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="op-fill" checked style="accent-color:var(--accent)">
+          🔧 Remplissage valeurs manquantes
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.85rem">
+          <input type="checkbox" id="op-norm" checked style="accent-color:var(--accent)">
+          🔡 Normalisation du texte (strip + lower)
+        </label>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="clean-btn" onclick="runCleaning()" style="width:100%" disabled>
+      🧹 Lancer le nettoyage
+    </button>
+    <div id="error-box" style="display:none;margin-top:10px"></div>
+  </div>
+
+  <!-- Résultat stats -->
+  <div class="card">
+    <div class="card-title">📊 Résultats du nettoyage</div>
+    <div id="clean-summary" style="color:var(--text-muted)">
+      Sélectionne une table et lance le nettoyage.
+    </div>
+  </div>
+</div>
+
+<!-- Preview -->
+<div id="result-box">
+  <div class="card">
+    <div class="card-title">✨ Données nettoyées (aperçu)</div>
+    <div class="table-wrap">
+      <table class="data-table" id="preview-table"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedTable = '';
+
+// ── Onglets ──
+function switchTab(tab) {
+  document.getElementById('panel-list').style.display   = tab === 'list'   ? 'block' : 'none';
+  document.getElementById('panel-manual').style.display = tab === 'manual' ? 'block' : 'none';
+  document.getElementById('tab-list').className   = tab === 'list'   ? 'btn btn-primary'  : 'btn btn-outline';
+  document.getElementById('tab-manual').className = tab === 'manual' ? 'btn btn-primary'  : 'btn btn-outline';
+  if (tab === 'manual') updateSelectedTable(document.getElementById('manual-table').value);
+}
+
+// ── Sélection depuis la liste ──
+function selectTable(name, el) {
+  document.querySelectorAll('.table-item').forEach(i => i.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--accent)';
+  selectedTable = name;
+  document.getElementById('selected-display').textContent = name;
+  document.getElementById('clean-btn').disabled = false;
+}
+
+// ── Saisie manuelle ──
+function updateSelectedTable(val) {
+  selectedTable = val.trim();
+  document.getElementById('selected-display').textContent = selectedTable || '— aucune —';
+  document.getElementById('clean-btn').disabled = !selectedTable;
+}
+
+// ── Extraire puis nettoyer ──
+async function extractThenClean() {
+  const table   = document.getElementById('manual-table').value.trim();
+  const db_type = document.getElementById('db-type-clean').value;
+  const db_name = document.getElementById('db-name-clean').value;
+
+  if (!table) { alert('Entrez d\'abord un nom de table.'); return; }
+
+  const fd = new FormData();
+  fd.append('db_type', db_type);
+  fd.append('db_name', db_name);
+  fd.append('mode', 'single');
+  fd.append('table_name', table);
+
+  const r    = await fetch("{% url 'run_extraction' %}", {method:'POST', body:fd});
+  const data = await r.json();
+
+  if (data.error) {
+    document.getElementById('error-box').style.display = 'block';
+    document.getElementById('error-box').innerHTML =
+      `<div style="color:var(--accent2);padding:10px;background:rgba(255,101,132,.1);border-radius:8px">❌ ${data.error}</div>`;
+  } else {
+    updateSelectedTable(table);
+    document.getElementById('error-box').style.display = 'none';
+    alert(`✅ Table '${table}' extraite (${data.rows} lignes). Tu peux maintenant lancer le nettoyage.`);
+  }
+}
+
+// ── Lancer le nettoyage ──
+async function runCleaning() {
+  if (!selectedTable) { alert('Sélectionne une table d\'abord.'); return; }
+
+  const btn = document.getElementById('clean-btn');
+  const errBox = document.getElementById('error-box');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Nettoyage…';
+  errBox.style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('table_name', selectedTable);
+
+  const r    = await fetch("{% url 'run_cleaning' %}", {method:'POST', body:fd});
+  const data = await r.json();
+
+  btn.disabled = false;
+  btn.innerHTML = '🧹 Lancer le nettoyage';
+
+  if (data.error) {
+    errBox.style.display = 'block';
+    errBox.innerHTML = `<div style="color:var(--accent2);padding:10px;background:rgba(255,101,132,.1);border-radius:8px;border:1px solid rgba(255,101,132,.3)">❌ ${data.error}</div>`;
+    return;
+  }
+
+  // ── Afficher les stats ──
+  document.getElementById('clean-summary').innerHTML = `
+    <div class="alert alert-success">✅ Nettoyage terminé !</div>
+    <div class="grid-2" style="gap:10px;margin-bottom:12px">
+      <div style="background:var(--surface2);padding:12px;border-radius:8px;text-align:center">
+        <div style="font-size:.75rem;color:var(--text-muted)">LIGNES AVANT</div>
+        <div style="font-size:1.8rem;font-weight:700;color:var(--accent2)">${data.rows_before}</div>
+      </div>
+      <div style="background:var(--surface2);padding:12px;border-radius:8px;text-align:center">
+        <div style="font-size:.75rem;color:var(--text-muted)">LIGNES APRÈS</div>
+        <div style="font-size:1.8rem;font-weight:700;color:var(--green)">${data.rows_after}</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="font-size:.85rem">🗑️ Doublons supprimés</span>
+        <span class="badge badge-red">${data.duplicates_removed}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="font-size:.85rem">🔧 Valeurs manquantes remplies</span>
+        <span class="badge badge-yellow">${data.missing_filled}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="font-size:.85rem">🔡 Colonnes normalisées</span>
+        <span class="badge badge-blue">${data.columns_normalized.length}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="font-size:.85rem">💾 Fichier sauvegardé</span>
+        <span style="font-size:.75rem;color:var(--green)">${data.saved_to}</span>
+      </div>
+    </div>`;
+
+  // ── Aperçu ──
+  const cols = Object.keys(data.preview[0] || {});
+  let html = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+  data.preview.forEach(row => {
+    html += '<tr>' + cols.map(c => `<td>${row[c] ?? ''}</td>`).join('') + '</tr>';
+  });
+  document.getElementById('preview-table').innerHTML = html + '</tbody>';
+  document.getElementById('result-box').style.display = 'block';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Extraction{% endblock %}
+{% block topbar_title %}📥 Extraction Agent{% endblock %}
+{% block content %}
+<div class="section-title">Agent d'Extraction</div>
+<p class="section-sub">Connexion à ta base de données réelle via SQLAlchemy.</p>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">⚙️ Connexion BDD</div>
+
+    <div class="form-group">
+      <label class="form-label">Type de base de données</label>
+      <select class="form-control" id="db-type" onchange="updateDbHint()">
+        {% for t in db_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Nom / Chemin de la BDD</label>
+      <input type="text" class="form-control" id="db-name"
+             placeholder="ex: test.db.sqlite" value="test.db.sqlite">
+      <div id="db-hint" style="font-size:.75rem;color:var(--text-muted);margin-top:4px">
+        SQLite : chemin vers le fichier .sqlite
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label class="form-label">Mode d'extraction</label>
+      <select class="form-control" id="mode" onchange="toggleTableInput()">
+        <option value="list">📋 Lister les tables disponibles</option>
+        <option value="single">📄 Extraire une table</option>
+        <option value="all">📦 Extraire toutes les tables</option>
+        <option value="llm">🤖 LLM choisit les tables (Ollama)</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="table-group" style="display:none">
+      <label class="form-label">Nom de la table</label>
+      <input type="text" class="form-control" id="table-name" placeholder="ex: customers">
+    </div>
+
+    <button class="btn btn-primary" id="extract-btn" onclick="runExtraction()" style="width:100%">
+      📥 Lancer l'extraction
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 Résultat</div>
+    <div id="result-summary" style="color:var(--text-muted)">
+      Configure la connexion et lance l'extraction.
+    </div>
+  </div>
+</div>
+
+<div id="result-box">
+  <div class="card">
+    <div class="card-title">👁️ Aperçu (10 premières lignes)</div>
+    <div class="table-wrap"><table class="data-table" id="preview-table"></table></div>
+  </div>
+</div>
+
+<script>
+const hints = {
+  sqlite:     "SQLite : chemin vers le fichier .sqlite (ex: test.db.sqlite)",
+  mysql:      "MySQL : nom de la base (ex: mydb) — config dans db/connection.py",
+  postgresql: "PostgreSQL : nom de la base (ex: mydb)",
+  oracle:     "Oracle : DSN ou nom du service",
+  sql_server: "SQL Server : nom de la base",
+};
+function updateDbHint() {
+  document.getElementById('db-hint').textContent = hints[document.getElementById('db-type').value] || '';
+}
+function toggleTableInput() {
+  const mode = document.getElementById('mode').value;
+  document.getElementById('table-group').style.display = mode === 'single' ? 'block' : 'none';
+}
+async function runExtraction() {
+  const btn = document.getElementById('extract-btn');
+  const summary = document.getElementById('result-summary');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Connexion…';
+  summary.innerHTML = '<span class="spinner"></span> Connexion à la base…';
+
+  const fd = new FormData();
+  fd.append('db_type',    document.getElementById('db-type').value);
+  fd.append('db_name',    document.getElementById('db-name').value);
+  fd.append('mode',       document.getElementById('mode').value);
+  fd.append('table_name', document.getElementById('table-name')?.value || '');
+
+  const r    = await fetch("{% url 'run_extraction' %}", {method:'POST', body:fd});
+  const data = await r.json();
+  btn.disabled = false; btn.innerHTML = '📥 Lancer l\'extraction';
+
+  if (data.error) {
+    summary.innerHTML = `<div style="color:var(--accent2);padding:12px;background:rgba(255,101,132,.1);border-radius:8px;border:1px solid rgba(255,101,132,.3)">❌ ${data.error}</div>`;
+    return;
+  }
+
+  // Mode LIST
+  if (data.mode === 'list') {
+    let html = '<div class="alert alert-success">✅ Connexion réussie !</div>';
+    html += `<div style="margin-bottom:12px;color:var(--text-muted);font-size:.85rem">${data.tables.length} table(s) trouvée(s)</div>`;
+    html += '<div style="display:flex;flex-direction:column;gap:6px">';
+    data.tables.forEach(t => {
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:6px">
+        <span style="font-weight:600">📋 ${t}</span>
+        <button class="btn btn-outline" style="padding:4px 12px;font-size:.75rem"
+          onclick="document.getElementById('mode').value='single';document.getElementById('table-name').value='${t}';toggleTableInput()">
+          Sélectionner
+        </button>
+      </div>`;
+    });
+    html += '</div>';
+    summary.innerHTML = html;
+    return;
+  }
+
+  // Mode SINGLE
+  if (data.mode === 'single') {
+    summary.innerHTML = `
+      <div class="alert alert-success">✅ Extraction réussie !</div>
+      <div class="grid-2" style="gap:10px">
+        <div style="background:var(--surface2);padding:12px;border-radius:8px">
+          <div style="font-size:.75rem;color:var(--text-muted)">TABLE</div>
+          <div style="font-weight:600;color:var(--accent)">${data.table}</div>
+        </div>
+        <div style="background:var(--surface2);padding:12px;border-radius:8px">
+          <div style="font-size:.75rem;color:var(--text-muted)">LIGNES</div>
+          <div style="font-weight:600">${data.rows}</div>
+        </div>
+        <div style="background:var(--surface2);padding:12px;border-radius:8px">
+          <div style="font-size:.75rem;color:var(--text-muted)">COLONNES</div>
+          <div style="font-weight:600;font-size:.8rem">${data.columns.join(', ')}</div>
+        </div>
+        <div style="background:var(--surface2);padding:12px;border-radius:8px">
+          <div style="font-size:.75rem;color:var(--text-muted)">SAUVEGARDÉ</div>
+          <div style="font-weight:600;color:var(--green);font-size:.8rem">${data.saved_to}</div>
+        </div>
+      </div>`;
+    const cols = Object.keys(data.preview[0] || {});
+    let html = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    data.preview.forEach(row => {
+      html += '<tr>' + cols.map(c => {
+        const v = row[c];
+        return `<td>${v === null ? '<span style="color:var(--accent2);font-style:italic">null</span>' : v}</td>`;
+      }).join('') + '</tr>';
+    });
+    document.getElementById('preview-table').innerHTML = html + '</tbody>';
+    document.getElementById('result-box').style.display = 'block';
+    return;
+  }
+
+  // Mode ALL ou LLM
+  summary.innerHTML = `
+    <div class="alert alert-success">✅ ${data.message}</div>
+    ${data.tables ? '<div style="color:var(--text-muted);font-size:.85rem">Tables extraites : ' + data.tables.join(', ') + '</div>' : ''}`;
+}
+</script>
+{% endblock %}

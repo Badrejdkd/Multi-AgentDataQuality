@@ -1,0 +1,11 @@
+{
+  "rows": 50,
+  "columns": 5,
+  "missing_values": {
+    "id": 0,
+    "name": 7,
+    "email": 16,
+    "age": 7,
+    "city": 7
+  },
+  "duplicates": 

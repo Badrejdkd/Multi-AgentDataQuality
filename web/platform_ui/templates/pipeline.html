@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Pipeline{% endblock %}
+{% block topbar_title %}⚡ Orchestrateur Pipeline{% endblock %}
+{% block content %}
+<div class="section-title">Pipeline Complet</div>
+<p class="section-sub">Connecte ta BDD et orchestre tous les agents automatiquement.</p>
+
+<div class="card">
+  <div class="card-title">🔄 Architecture</div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div style="background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.4);border-radius:10px;padding:12px 16px;text-align:center;min-width:120px">
+      <div style="font-size:1.4rem">📥</div><div style="font-weight:600;font-size:.85rem">ExtractionAgent</div>
+    </div>
+    <div style="color:var(--text-muted);font-size:1.4rem">→</div>
+    <div style="background:rgba(246,211,101,.1);border:1px solid rgba(246,211,101,.3);border-radius:10px;padding:12px 16px;text-align:center;min-width:120px">
+      <div style="font-size:1.4rem">✅</div><div style="font-weight:600;font-size:.85rem">QualityAgent</div>
+    </div>
+    <div style="color:var(--text-muted);font-size:1.4rem">→</div>
+    <div style="background:rgba(67,233,123,.1);border:1px solid rgba(67,233,123,.3);border-radius:10px;padding:12px 16px;text-align:center;min-width:120px">
+      <div style="font-size:1.4rem">🧹</div><div style="font-weight:600;font-size:.85rem">CleaningAgent</div>
+    </div>
+    <div style="color:var(--text-muted);font-size:1.4rem">→</div>
+    <div style="background:rgba(255,101,132,.1);border:1px solid rgba(255,101,132,.3);border-radius:10px;padding:12px 16px;text-align:center;min-width:120px">
+      <div style="font-size:1.4rem">💾</div><div style="font-weight:600;font-size:.85rem">StorageAgent</div>
+    </div>
+    <div style="color:var(--text-muted);font-size:1.4rem">→</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:120px">
+      <div style="font-size:1.4rem">📋</div><div style="font-weight:600;font-size:.85rem">Logs</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">⚙️ Connexion BDD</div>
+    <div class="form-group">
+      <label class="form-label">Type de BDD</label>
+      <select class="form-control" id="db-type">
+        {% for t in db_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nom / Chemin</label>
+      <input type="text" class="form-control" id="db-name"
+             placeholder="ex: test.db.sqlite" value="test.db.sqlite">
+    </div>
+    <div style="padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:16px;font-size:.85rem">
+      <div style="color:var(--text-muted);margin-bottom:6px;font-size:.8rem">Ce pipeline va :</div>
+      <div>1️⃣ Lister toutes les tables de la BDD</div>
+      <div>2️⃣ Extraire chaque table</div>
+      <div>3️⃣ Calculer le rapport de qualité</div>
+      <div>4️⃣ Nettoyer les données</div>
+      <div>5️⃣ Sauvegarder raw + cleaned + rapports</div>
+    </div>
+    <button class="btn btn-success" id="pipe-btn" onclick="runPipeline()" style="width:100%;font-size:1rem;padding:14px">
+      ⚡ Lancer le pipeline complet
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 Progression</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div id="s-connect" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:var(--surface2);opacity:.4">🔌 Connexion BDD <span id="b-connect" class="badge" style="margin-left:auto">en attente</span></div>
+      <div id="s-extract" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:var(--surface2);opacity:.4">📥 Extraction <span id="b-extract" class="badge" style="margin-left:auto">en attente</span></div>
+      <div id="s-quality" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:var(--surface2);opacity:.4">✅ Qualité <span id="b-quality" class="badge" style="margin-left:auto">en attente</span></div>
+      <div id="s-clean"   style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:var(--surface2);opacity:.4">🧹 Nettoyage <span id="b-clean"   class="badge" style="margin-left:auto">en attente</span></div>
+      <div id="s-save"    style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:var(--surface2);opacity:.4">💾 Sauvegarde <span id="b-save"    class="badge" style="margin-left:auto">en attente</span></div>
+    </div>
+    <div class="log-box" id="pipe-log" style="margin-top:16px;display:none"></div>
+  </div>
+</div>
+
+<div id="result-box">
+  <div class="card">
+    <div class="card-title">📋 Résultats par table</div>
+    <div class="table-wrap"><table class="data-table" id="results-table"></table></div>
+  </div>
+</div>
+
+<script>
+function setStep(id, status, txt) {
+  const el = document.getElementById('s-'+id), b = document.getElementById('b-'+id);
+  el.style.opacity = '1';
+  if (status === 'run')  { el.style.background='rgba(108,99,255,.1)'; b.className='badge badge-blue';   b.textContent='⏳ en cours'; }
+  if (status === 'done') { el.style.background='rgba(67,233,123,.08)';b.className='badge badge-green';  b.textContent='✅ '+(txt||'fait'); }
+  if (status === 'err')  { el.style.background='rgba(255,101,132,.1)';b.className='badge badge-red';    b.textContent='❌ erreur'; }
+}
+async function runPipeline() {
+  const btn = document.getElementById('pipe-btn');
+  const log = document.getElementById('pipe-log');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Pipeline en cours…';
+  log.style.display = 'block'; log.innerHTML = '';
+  document.getElementById('result-box').style.display = 'none';
+
+  const addLog = msg => { log.innerHTML += `<div>${new Date().toLocaleTimeString()} — ${msg}</div>`; log.scrollTop = 9999; };
+
+  addLog('[START] Démarrage du pipeline complet…');
+  setStep('connect','run');
+  await new Promise(r => setTimeout(r, 300));
+
+  const fd = new FormData();
+  fd.append('db_type', document.getElementById('db-type').value);
+  fd.append('db_name',  document.getElementById('db-name').value);
+
+  setStep('connect','done','connecté');
+  setStep('extract','run');
+  addLog('[EXTRACT] Connexion et récupération des tables…');
+  await new Promise(r => setTimeout(r, 400));
+  setStep('extract','done');
+  setStep('quality','run');
+  addLog('[QUALITY] Analyse qualité en cours…');
+  await new Promise(r => setTimeout(r, 300));
+  setStep('quality','done');
+  setStep('clean','run');
+  addLog('[CLEAN] Nettoyage en cours…');
+  await new Promise(r => setTimeout(r, 300));
+  setStep('clean','done');
+  setStep('save','run');
+  addLog('[SAVE] Sauvegarde des fichiers…');
+
+  const r    = await fetch("{% url 'run_pipeline' %}", {method:'POST', body:fd});
+  const data = await r.json();
+
+  btn.disabled = false; btn.innerHTML = '⚡ Lancer le pipeline complet';
+
+  if (data.error) {
+    setStep('connect','err');
+    addLog(`[ERROR] ${data.error}`);
+    return;
+  }
+
+  setStep('save','done', data.results.length + ' tables');
+  addLog(`[SUCCESS] Pipeline terminé — ${data.results.length} table(s) traitée(s) — BDD: ${data.db}`);
+
+  data.results.forEach(r => {
+    const icon = r.status.includes('Done') ? '✅' : '❌';
+    addLog(`[TABLE] ${icon} ${r.table} → score:${r.quality_score}% dups:${r.duplicates_removed} missing:${r.missing_filled}`);
+  });
+
+  let html = '<thead><tr><th>Table</th><th>Lignes</th><th>Score qualité</th><th>Dups supprimés</th><th>Manquants remplis</th><th>Statut</th></tr></thead><tbody>';
+  data.results.forEach(r => {
+    const sc  = r.quality_score;
+    const cls = sc >= 80 ? 'green' : sc >= 60 ? 'yellow' : 'red';
+    html += `<tr>
+      <td><b>${r.table}</b></td>
+      <td>${r.rows}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <span class="badge badge-${cls}">${sc}%</span>
+        <div class="progress" style="width:70px"><div class="progress-bar ${cls}" style="width:${sc}%"></div></div>
+      </div></td>
+      <td><span class="badge badge-red">${r.duplicates_removed}</span></td>
+      <td><span class="badge badge-yellow">${r.missing_filled}</span></td>
+      <td>${r.status}</td>
+    </tr>`;
+  });
+  document.getElementById('results-table').innerHTML = html + '</tbody>';
+  document.getElementById('result-box').style.display = 'block';
+}
+</script>
+{% endblock %}

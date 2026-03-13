@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}Quality{% endblock %}
+{% block topbar_title %}✅ Quality Agent{% endblock %}
+{% block content %}
+
+<div class="section-title">Agent de Qualité</div>
+<p class="section-sub">Analyse la qualité des données : score, valeurs manquantes, doublons, outliers.</p>
+
+{% if not raw_files and not cleaned_files %}
+<div class="alert alert-info" style="margin-bottom:20px">
+  ⚠️ Aucun fichier disponible.
+  <a href="{% url 'extraction' %}" style="color:var(--accent);font-weight:600">
+    Lancez d'abord une extraction →
+  </a>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <!-- Config -->
+  <div class="card">
+    <div class="card-title">⚙️ Sélection de la table</div>
+
+    <!-- Onglets -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-primary" id="tab-list"   onclick="switchTab('list')"   style="flex:1;padding:8px">📋 Depuis la liste</button>
+      <button class="btn btn-outline" id="tab-manual" onclick="switchTab('manual')" style="flex:1;padding:8px">✏️ Saisie manuelle</button>
+    </div>
+
+    <!-- TAB 1 : liste -->
+    <div id="panel-list">
+
+      {% if raw_files %}
+      <div class="form-group">
+        <label class="form-label">
+          📁 Fichiers Raw
+          <span class="badge badge-yellow" style="margin-left:6px">{{ raw_files|length }}</span>
+        </label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          {% for t in raw_files %}
+          <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:2px solid transparent"
+                 class="table-item" onclick="selectTable('{{ t }}', 'raw', this)">
+            <input type="radio" name="table_radio" value="{{ t }}" style="accent-color:var(--accent)">
+            <span style="flex:1;font-weight:600">{{ t }}</span>
+            <span class="badge badge-yellow">raw</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if cleaned_files %}
+      <div class="form-group">
+        <label class="form-label">
+          ✨ Fichiers Cleaned
+          <span class="badge badge-green" style="margin-left:6px">{{ cleaned_files|length }}</span>
+        </label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          {% for t in cleaned_files %}
+          <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:2px solid transparent"
+                 class="table-item" onclick="selectTable('{{ t }}', 'cleaned', this)">
+            <input type="radio" name="table_radio" value="{{ t }}" style="accent-color:var(--green)">
+            <span style="flex:1;font-weight:600">{{ t }}</span>
+            <span class="badge badge-green">cleaned</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not raw_files and not cleaned_files %}
+      <div style="padding:20px;text-align:center;color:var(--text-muted);background:var(--surface2);border-radius:8px">
+        <div style="font-size:2rem;margin-bottom:8px">📭</div>
+        Aucun fichier extrait.<br>
+        <a href="{% url 'extraction' %}" style="color:var(--accent)">Faire une extraction d'abord</a>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- TAB 2 : saisie manuelle -->
+    <div id="panel-manual" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Nom de la table</label>
+        <input type="text" class="form-control" id="manual-table"
+               placeholder="ex: customers, orders…"
+               oninput="updateSelectedTable(this.value, 'raw')">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source du fichier</label>
+        <select class="form-control" id="manual-source" onchange="updateSelectedTable(document.getElementById('manual-table').value, this.value)">
+          <option value="raw">data/raw/</option>
+          <option value="cleaned">data/cleaned/</option>
+        </select>
+      </div>
+
+      <!-- Extraire à la volée -->
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;margin-top:8px">
+        <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:8px">Extraire depuis la BDD :</div>
+        <select class="form-control" id="db-type-q" style="margin-bottom:8px">
+          {% for t in db_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+        </select>
+        <input type="text" class="form-control" id="db-name-q"
+               placeholder="Nom/chemin BDD" value="test.db.sqlite" style="margin-bottom:8px">
+        <button class="btn btn-outline" onclick="extractForQuality()" style="width:100%;padding:8px">
+          📥 Extraire puis analyser
+        </button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Table sélectionnée -->
+    <div style="padding:10px;background:var(--surface2);border-radius:8px;margin-bottom:16px">
+      <div style="font-size:.75rem;color:var(--text-muted)">TABLE SÉLECTIONNÉE</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <div id="selected-display" style="font-weight:600;color:var(--accent);font-size:1.1rem">— aucune —</div>
+        <span id="selected-source-badge" class="badge" style="display:none"></span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="quality-btn" onclick="runQuality()" style="width:100%" disabled>
+      ✅ Analyser la qualité
+    </button>
+    <div id="error-box" style="display:none;margin-top:10px"></div>
+  </div>
+
+  <!-- Score -->
+  <div class="card">
+    <div class="card-title">🏆 Score de qualité</div>
+    <div id="score-box" style="text-align:center;padding:30px;color:var(--text-muted)">
+      <div style="font-size:3rem;margin-bottom:8px">📊</div>
+      Sélectionne une table et lance l'analyse.
+    </div>
+  </div>
+</div>
+
+<!-- Détail -->
+<div id="result-box" style="display:none">
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">📉 Valeurs manquantes</div>
+      <div id="missing-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Outliers détectés</div>
+      <div id="outliers-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Résumé général</div>
+      <div id="summary-box"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedTable  = '';
+let selectedSource = 'raw';
+
+// ── Onglets ──
+function switchTab(tab) {
+  document.getElementById('panel-list').style.display   = tab === 'list'   ? 'block' : 'none';
+  document.getElementById('panel-manual').style.display = tab === 'manual' ? 'block' : 'none';
+  document.getElementById('tab-list').className   = tab === 'list'   ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('tab-manual').className = tab === 'manual' ? 'btn btn-primary' : 'btn btn-outline';
+  if (tab === 'manual') {
+    updateSelectedTable(
+      document.getElementById('manual-table').value,
+      document.getElementById('manual-source').value
+    );
+  }
+}
+
+// ── Sélection depuis la liste ──
+function selectTable(name, source, el) {
+  document.querySelectorAll('.table-item').forEach(i => i.style.borderColor = 'transparent');
+  el.style.borderColor = source === 'cleaned' ? 'var(--green)' : 'var(--accent)';
+  selectedTable  = name;
+  selectedSource = source;
+  document.getElementById('selected-display').textContent = name;
+  const badge = document.getElementById('selected-source-badge');
+  badge.style.display   = 'inline-block';
+  badge.className       = source === 'cleaned' ? 'badge badge-green' : 'badge badge-yellow';
+  badge.textContent     = source;
+  document.getElementById('quality-btn').disabled = false;
+}
+
+// ── Saisie manuelle ──
+function updateSelectedTable(val, source) {
+  selectedTable  = val.trim();
+  selectedSource = source || 'raw';
+  document.getElementById('selected-display').textContent = selectedTable || '— aucune —';
+  const badge = document.getElementById('selected-source-badge');
+  if (selectedTable) {
+    badge.style.display = 'inline-block';
+    badge.className     = selectedSource === 'cleaned' ? 'badge badge-green' : 'badge badge-yellow';
+    badge.textContent   = selectedSource;
+  } else {
+    badge.style.display = 'none';
+  }
+  document.getElementById('quality-btn').disabled = !selectedTable;
+}
+
+// ── Extraire puis analyser ──
+async function extractForQuality() {
+  const table   = document.getElementById('manual-table').value.trim();
+  const db_type = document.getElementById('db-type-q').value;
+  const db_name = document.getElementById('db-name-q').value;
+  if (!table) { alert('Entrez d\'abord un nom de table.'); return; }
+
+  const fd = new FormData();
+  fd.append('db_type',    db_type);
+  fd.append('db_name',    db_name);
+  fd.append('mode',       'single');
+  fd.append('table_name', table);
+
+  const r    = await fetch("{% url 'run_extraction' %}", {method:'POST', body:fd});
+  const data = await r.json();
+
+  if (data.error) {
+    document.getElementById('error-box').style.display = 'block';
+    document.getElementById('error-box').innerHTML =
+      `<div style="color:var(--accent2);padding:10px;background:rgba(255,101,132,.1);border-radius:8px">❌ ${data.error}</div>`;
+  } else {
+    updateSelectedTable(table, 'raw');
+    document.getElementById('error-box').style.display = 'none';
+    alert(`✅ Table '${table}' extraite (${data.rows} lignes). Lance maintenant l'analyse.`);
+  }
+}
+
+// ── Lancer l'analyse ──
+async function runQuality() {
+  if (!selectedTable) { alert('Sélectionne une table d\'abord.'); return; }
+
+  const btn    = document.getElementById('quality-btn');
+  const errBox = document.getElementById('error-box');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyse…';
+  errBox.style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('table_name', selectedTable);
+  fd.append('source',     selectedSource);
+
+  const r    = await fetch("{% url 'run_quality' %}", {method:'POST', body:fd});
+  const data = await r.json();
+
+  btn.disabled = false;
+  btn.innerHTML = '✅ Analyser la qualité';
+
+  if (data.error) {
+    errBox.style.display = 'block';
+    errBox.innerHTML = `<div style="color:var(--accent2);padding:10px;background:rgba(255,101,132,.1);border-radius:8px;border:1px solid rgba(255,101,132,.3)">❌ ${data.error}</div>`;
+    return;
+  }
+
+  // ── Score ──
+  const rp    = data.report;
+  const sc    = rp.quality_score;
+  const color = sc >= 80 ? 'var(--green)' : sc >= 60 ? 'var(--yellow)' : 'var(--accent2)';
+  const cls   = sc >= 80 ? 'green' : sc >= 60 ? 'yellow' : 'red';
+  const emoji = sc >= 80 ? '🟢 Excellent' : sc >= 60 ? '🟡 Moyen' : '🔴 Mauvais';
+
+  document.getElementById('score-box').innerHTML = `
+    <div style="font-size:4rem;font-weight:800;color:${color};line-height:1">${sc}%</div>
+    <div style="color:var(--text-muted);margin:8px 0 16px">${emoji}</div>
+    <div class="progress" style="margin-bottom:12px">
+      <div class="progress-bar ${cls}" style="width:${sc}%"></div>
+    </div>
+    <div style="font-size:.85rem;color:var(--text-muted)">
+      ${rp.rows} lignes × ${rp.columns} colonnes
+      · <span class="${rp.duplicates>0?'badge badge-red':'badge badge-green'}">${rp.duplicates} doublon(s)</span>
+    </div>`;
+
+  // ── Valeurs manquantes ──
+  const mv  = rp.missing_values;
+  const total_missing = Object.values(mv).reduce((a,b) => a+b, 0);
+  let mvHtml = `<div style="margin-bottom:10px;font-size:.8rem;color:var(--text-muted)">
+    Total : <strong style="color:${total_missing>0?'var(--accent2)':'var(--green)'}">${total_missing}</strong> valeur(s) manquante(s)
+  </div><div style="display:flex;flex-direction:column;gap:8px">`;
+  Object.entries(mv).forEach(([col, count]) => {
+    const pct = Math.round((count / rp.rows) * 100);
+    mvHtml += `
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:3px">
+          <span style="font-weight:500">${col}</span>
+          <span class="${count>0?'badge badge-red':'badge badge-green'}">${count} (${pct}%)</span>
+        </div>
+        ${count > 0
+          ? `<div class="progress"><div class="progress-bar red" style="width:${Math.max(pct,2)}%"></div></div>`
+          : `<div class="progress"><div class="progress-bar green" style="width:100%"></div></div>`}
+      </div>`;
+  });
+  mvHtml += '</div>';
+  document.getElementById('missing-box').innerHTML = mvHtml;
+
+  // ── Outliers ──
+  const ot = rp.outliers;
+  let otHtml = '';
+  if (Object.keys(ot).length === 0) {
+    otHtml = '<div style="color:var(--text-muted);text-align:center;padding:20px">Aucune colonne numérique détectée.</div>';
+  } else {
+    const total_out = Object.values(ot).reduce((a,b) => a+b, 0);
+    otHtml = `<div style="margin-bottom:10px;font-size:.8rem;color:var(--text-muted)">
+      Total : <strong style="color:${total_out>0?'var(--yellow)':'var(--green)'}">${total_out}</strong> outlier(s)
+    </div><div style="display:flex;flex-direction:column;gap:6px">`;
+    Object.entries(ot).forEach(([col, count]) => {
+      otHtml += `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:6px">
+          <span style="font-size:.85rem;font-weight:500">${col}</span>
+          <span class="${count>0?'badge badge-yellow':'badge badge-green'}">${count} outlier${count>1?'s':''}</span>
+        </div>`;
+    });
+    otHtml += '</div>';
+  }
+  document.getElementById('outliers-box').innerHTML = otHtml;
+
+  // ── Résumé ──
+  document.getElementById('summary-box').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="color:var(--text-muted);font-size:.85rem">Lignes</span>
+        <strong>${rp.rows}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="color:var(--text-muted);font-size:.85rem">Colonnes</span>
+        <strong>${rp.columns}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="color:var(--text-muted);font-size:.85rem">Doublons</span>
+        <span class="${rp.duplicates>0?'badge badge-red':'badge badge-green'}">${rp.duplicates}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="color:var(--text-muted);font-size:.85rem">Valeurs manquantes</span>
+        <strong style="color:${total_missing>0?'var(--accent2)':'var(--green)'}">${total_missing}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="color:var(--text-muted);font-size:.85rem">Source</span>
+        <span class="${selectedSource==='cleaned'?'badge badge-green':'badge badge-yellow'}">${selectedSource}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--surface2);border-radius:6px">
+        <span style="color:var(--text-muted);font-size:.85rem">Score global</span>
+        <strong style="color:${color}">${sc}%</strong>
+      </div>
+    </div>`;
+
+  document.getElementById('result-box').style.display = 'block';
+}
+</script>
+{% endblock %}

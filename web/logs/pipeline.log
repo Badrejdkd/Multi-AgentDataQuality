@@ -303,3 +303,25 @@ ValueError: Unsupported database type
 2026-03-10 23:13:25,454 - WARNING - Not Found: /favicon.ico
 2026-03-10 23:16:00,930 - INFO - Initializing Multi-Agent System
 2026-03-11 15:26:13,496 - INFO - Initializing Multi-Agent System
+[ERROR] '__EFMigrationsHistory' — Cannot perform reduction 'median' with string dtype
+[ERROR] 'Candidats' — too many values to unpack (expected 2)
+[ERROR] 'Entreprises' — Cannot perform reduction 'median' with string dtype
+[ERROR] 'Competences' — too many values to unpack (expected 2)
+[ERROR] 'Formations' — too many values to unpack (expected 2)
+[ERROR] 'Messages' — too many values to unpack (expected 2)
+[ERROR] 'Publications' — too many values to unpack (expected 2)
+[ERROR] 'OffresEmploi' — Cannot perform reduction 'median' with string dtype
+[ERROR] 'Commentaires' — too many values to unpack (expected 2)
+[ERROR] 'Candidatures' — too many values to unpack (expected 2)
+[ERROR] 'sysdiagrams' — too many values to unpack (expected 2)
+[PIPELINE] '__EFMigrationsHistory' — score:100.0% — dups:0 — missing:0
+[PIPELINE] 'Candidats' — score:nan% — dups:0 — missing:0
+[PIPELINE] 'Entreprises' — score:75.0% — dups:0 — missing:3
+[PIPELINE] 'Competences' — score:nan% — dups:0 — missing:0
+[PIPELINE] 'Formations' — score:nan% — dups:0 — missing:0
+[PIPELINE] 'Messages' — score:nan% — dups:0 — missing:0
+[PIPELINE] 'Publications' — score:nan% — dups:0 — missing:0
+[ERROR] 'OffresEmploi' — Can only use .str accessor with string values, not decimal
+[PIPELINE] 'Commentaires' — score:nan% — dups:0 — missing:0
+[PIPELINE] 'Candidatures' — score:nan% — dups:0 — missing:0
+[PIPELINE] 'sysdiagrams' — score:nan% — dups:0 — missing:0

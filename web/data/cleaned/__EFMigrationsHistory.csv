@@ -1,0 +1,4 @@
+MigrationId,ProductVersion
+20251210193836_initialcreate,8.0.10
+20251211084720_init,8.0.10
+20251211190453_adddefaultvaluestooffre,8.0.10

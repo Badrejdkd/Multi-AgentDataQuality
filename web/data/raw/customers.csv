@@ -1,0 +1,51 @@
+id,name,email,age,city
+1,Alice,,30.0,Lyon
+2,Alice,,150.0,Bordeaux
+3,Charlie,BOB@EXAMPLE.COM,,Bordeaux
+4,Bob,alice@example.com,25.0,Paris
+5,Bob,alice@example.com,25.0,Bordeaux
+6,Bob,BOB@EXAMPLE.COM,25.0,MARSEILLE
+7,Alice,,30.0,
+8,  Diana  ,alice@example.com,22.0,Paris
+9,Alice,BOB@EXAMPLE.COM,30.0,Paris
+10,  Diana  ,alice@example.com,22.0,MARSEILLE
+11,,charlie@test.org,,MARSEILLE
+12,Alice,,150.0,Lyon
+13,Alice,charlie@test.org,25.0,Paris
+14,Alice,,,Lyon
+15,Bob,BOB@EXAMPLE.COM,,Bordeaux
+16,Bob,,150.0,Paris
+17,  Diana  ,,,Paris
+18,  Diana  ,BOB@EXAMPLE.COM,150.0,
+19,Alice,,35.0,Paris
+20,  Diana  ,alice@example.com,150.0,Bordeaux
+21,Bob,BOB@EXAMPLE.COM,25.0,Lyon
+22,  Diana  ,BOB@EXAMPLE.COM,22.0,Lyon
+23,,BOB@EXAMPLE.COM,22.0,
+24,Bob,charlie@test.org,25.0,Bordeaux
+25,,charlie@test.org,22.0,Lyon
+26,  Diana  ,,150.0,MARSEILLE
+27,Charlie,BOB@EXAMPLE.COM,35.0,Bordeaux
+28,Alice,,22.0,Bordeaux
+29,Bob,alice@example.com,35.0,
+30,,BOB@EXAMPLE.COM,25.0,Lyon
+31,Charlie,alice@example.com,35.0,Bordeaux
+32,Charlie,,,Lyon
+33,Bob,charlie@test.org,30.0,MARSEILLE
+34,Bob,,,
+35,Charlie,alice@example.com,25.0,MARSEILLE
+36,Alice,BOB@EXAMPLE.COM,22.0,
+37,Alice,,22.0,Bordeaux
+38,,BOB@EXAMPLE.COM,35.0,
+39,Alice,charlie@test.org,150.0,Paris
+40,Charlie,charlie@test.org,30.0,Lyon
+41,Charlie,charlie@test.org,150.0,Lyon
+42,  Diana  ,BOB@EXAMPLE.COM,25.0,Paris
+43,Charlie,,22.0,MARSEILLE
+44,Alice,BOB@EXAMPLE.COM,35.0,Paris
+45,,BOB@EXAMPLE.COM,22.0,Bordeaux
+46,  Diana  ,,150.0,Bordeaux
+47,Alice,charlie@test.org,150.0,Lyon
+48,,charlie@test.org,30.0,Bordeaux
+49,Alice,,30.0,Lyon
+50,  Diana  ,BOB@EXAMPLE.COM,35.0,Paris

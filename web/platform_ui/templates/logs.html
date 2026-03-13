@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Logs{% endblock %}
+{% block topbar_title %}📋 Logs système{% endblock %}
+{% block content %}
+<div class="section-title">Journaux système</div>
+<p class="section-sub">Historique de toutes les opérations des agents.</p>
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+  <button class="btn btn-outline" onclick="filter('')">Tout</button>
+  <button class="btn btn-outline" onclick="filter('PIPELINE')">Pipeline</button>
+  <button class="btn btn-outline" onclick="filter('EXTRACT')">Extraction</button>
+  <button class="btn btn-outline" onclick="filter('CLEAN')">Cleaning</button>
+  <button class="btn btn-outline" onclick="filter('QUALITY')">Quality</button>
+  <button class="btn btn-outline" onclick="filter('SUCCESS')">✅ Succès</button>
+</div>
+
+<div class="card">
+  <div class="card-title" style="display:flex;justify-content:space-between">
+    <span>📋 pipeline.log</span>
+    <span style="font-size:.8rem;color:var(--text-muted)">{{ log_lines|length }} ligne(s)</span>
+  </div>
+  <div class="log-box" id="log-content" style="max-height:500px">
+    {% if log_lines %}
+      {% for line in log_lines %}<div class="log-line">{{ line }}</div>{% endfor %}
+    {% else %}
+      <div style="color:var(--text-muted)">Aucun log disponible. Lancez un pipeline.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function filter(kw) {
+  document.querySelectorAll('.log-line').forEach(el => {
+    el.style.display = (!kw || el.textContent.includes(kw)) ? '' : 'none';
+  });
+}
+document.getElementById('log-content').scrollTop = 99999;
+</script>
+{% endblock %}
