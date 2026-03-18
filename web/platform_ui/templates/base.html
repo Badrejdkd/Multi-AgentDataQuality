@@ -687,6 +687,11 @@
       <span>✅</span> Quality
     </a>
     
+    <div class="nav-section">Intelligence Artificielle</div>
+    <a href="{% url 'llm_interface' %}" class="nav-link {% if page == 'llm' %}active{% endif %}">
+      <span>🤖</span> LLM Assistant
+    </a>
+    
     <div class="nav-section">Orchestration</div>
     <a href="{% url 'pipeline' %}" class="nav-link {% if page == 'pipeline' %}active{% endif %}">
       <span>⚡</span> Pipeline
@@ -700,15 +705,21 @@
       <span class="spinner" style="width: 12px; height: 12px;"></span>
       <span>Système opérationnel</span>
     </div>
-    <div style="font-size: 0.7rem;">v2.0 · 4 agents actifs</div>
+    <div style="font-size: 0.7rem;">v2.0 · 5 agents actifs</div>
   </div>
 </aside>
 <div class="main">
   <div class="topbar">
     <span class="topbar-title">{% block topbar_title %}Platform{% endblock %}</span>
-    <span class="topbar-badge">
-      <span>4 agents actifs</span>
-    </span>
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <span class="topbar-badge">
+        <span>5 agents actifs</span>
+      </span>
+      <a href="{% url 'llm_interface' %}" style="color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; gap: 5px;" title="Assistant IA">
+        <span style="font-size: 1.2rem;">🤖</span>
+        <span style="font-size: 0.8rem;">LLM</span>
+      </a>
+    </div>
   </div>
   <div class="content fade-in">
     {% block content %}{% endblock %}

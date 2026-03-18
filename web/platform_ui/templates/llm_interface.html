@@ -1,0 +1,410 @@
+<!-- templates/llm_interface.html -->
+{% extends "base.html" %}
+{% block title %}Interface LLM{% endblock %}
+{% block topbar_title %}🤖 Agent LLM Intelligent{% endblock %}
+{% block content %}
+
+<div class="section-title">Assistant IA pour Extraction et Filtrage</div>
+<p class="section-sub">Utilisez le LLM pour choisir intelligemment les tables et les filtres.</p>
+
+<div class="grid-2">
+    <!-- Configuration BDD -->
+    <div class="card">
+        <div class="card-title">⚙️ Connexion Base de Données</div>
+        
+        <div class="form-group">
+            <label class="form-label">Type de BDD</label>
+            <select class="form-control" id="db-type">
+                {% for t in db_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Nom / Chemin</label>
+            <input type="text" class="form-control" id="db-name" value="test.db.sqlite">
+        </div>
+    </div>
+
+    <!-- Mode d'utilisation -->
+    <div class="card">
+        <div class="card-title">🎯 Mode d'utilisation</div>
+        
+        <div style="display:flex; gap:10px; margin-bottom:20px">
+            <button class="btn" id="mode-select" onclick="setMode('select')" style="flex:1">📋 Sélection Tables</button>
+            <button class="btn btn-outline" id="mode-filter" onclick="setMode('filter')" style="flex:1">🔍 Génération Filtres</button>
+            <button class="btn btn-outline" id="mode-analyze" onclick="setMode('analyze')" style="flex:1">📊 Analyse Complète</button>
+        </div>
+
+        <!-- Mode Sélection de Tables -->
+        <div id="panel-select">
+            <div class="form-group">
+                <label class="form-label">🤖 Prompt pour choisir les tables</label>
+                <textarea class="form-control" id="select-prompt" rows="3"
+                    placeholder="Ex: Je veux les tables qui contiennent des données clients et commandes pour analyse commerciale">Sélectionne les tables les plus importantes pour l'analyse des ventes</textarea>
+            </div>
+            <div style="display:flex; gap:10px">
+                <button class="btn btn-primary" onclick="runLLMSelect(false)" style="flex:1">
+                    🤖 Tester la sélection
+                </button>
+                <button class="btn btn-success" onclick="runLLMSelect(true)" style="flex:1">
+                    📥 Sélectionner & Extraire
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode Génération de Filtres -->
+        <div id="panel-filter" style="display:none">
+            <div class="form-group">
+                <label class="form-label">📋 Nom de la table</label>
+                <input type="text" class="form-control" id="filter-table" placeholder="ex: customers">
+            </div>
+            <div class="form-group">
+                <label class="form-label">🤖 Prompt pour générer les filtres</label>
+                <textarea class="form-control" id="filter-prompt" rows="3"
+                    placeholder="Ex: Filtre les clients actifs avec des commandes récentes">Filtre les données pour n'avoir que les enregistrements de l'année dernière</textarea>
+            </div>
+            <div style="display:flex; gap:10px">
+                <button class="btn btn-primary" onclick="runLLMFilter(false)" style="flex:1">
+                    🔍 Tester les filtres
+                </button>
+                <button class="btn btn-success" onclick="runLLMFilter(true)" style="flex:1">
+                    📥 Appliquer & Extraire
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode Analyse Complète -->
+        <div id="panel-analyze" style="display:none">
+            <div class="form-group">
+                <label class="form-label">🤖 Objectif de l'analyse</label>
+                <textarea class="form-control" id="analyze-prompt" rows="4"
+                    placeholder="Ex: Analyse les performances commerciales du dernier trimestre et extrais les données pertinentes">Je veux analyser les tendances de ventes, identifier les produits populaires et les clients fidèles</textarea>
+            </div>
+            <button class="btn btn-primary" onclick="runLLMAnalyze()" style="width:100%">
+                📊 Lancer l'analyse complète
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Résultats -->
+<div id="result-card" class="card" style="margin-top:20px; display:none">
+    <div class="card-title">📊 Résultat de l'analyse LLM</div>
+    <div id="llm-result" style="max-height:500px; overflow-y:auto"></div>
+</div>
+
+<script>
+let currentMode = 'select';
+
+function setMode(mode) {
+    currentMode = mode;
+    
+    // Mettre à jour les boutons
+    document.getElementById('mode-select').className = mode === 'select' ? 'btn btn-primary' : 'btn btn-outline';
+    document.getElementById('mode-filter').className = mode === 'filter' ? 'btn btn-primary' : 'btn btn-outline';
+    document.getElementById('mode-analyze').className = mode === 'analyze' ? 'btn btn-primary' : 'btn btn-outline';
+    
+    // Afficher le bon panel
+    document.getElementById('panel-select').style.display = mode === 'select' ? 'block' : 'none';
+    document.getElementById('panel-filter').style.display = mode === 'filter' ? 'block' : 'none';
+    document.getElementById('panel-analyze').style.display = mode === 'analyze' ? 'block' : 'none';
+}
+
+async function runLLMSelect(extract) {
+    const db_type = document.getElementById('db-type').value;
+    const db_name = document.getElementById('db-name').value;
+    const prompt = document.getElementById('select-prompt').value;
+
+    if (!prompt) {
+        alert('Veuillez entrer un prompt');
+        return;
+    }
+
+    const resultDiv = document.getElementById('llm-result');
+    const card = document.getElementById('result-card');
+    
+    resultDiv.innerHTML = '<div class="spinner"></div> Consultation du LLM...';
+    card.style.display = 'block';
+
+    try {
+        const response = await fetch("{% url 'llm_select_tables' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                db_type: db_type,
+                db_name: db_name,
+                prompt: prompt,
+                extract: extract
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.error}</div>`;
+            return;
+        }
+
+        // Afficher les résultats
+        const result = data.result;
+        let html = '<div class="alert alert-success">✅ Analyse terminée</div>';
+        
+        html += '<div style="margin:15px 0; padding:15px; background:var(--surface2); border-radius:8px">';
+        
+        // Tables dans la BDD
+        if (result.tables_in_db) {
+            html += '<div style="margin-bottom:15px"><strong>📋 Tables disponibles :</strong><br>';
+            result.tables_in_db.forEach(t => {
+                html += `<span class="badge badge-info" style="margin:2px">${t}</span> `;
+            });
+            html += '</div>';
+        }
+        
+        // Tables sélectionnées
+        if (result.selected_tables) {
+            html += '<div style="margin-bottom:15px"><strong>🤖 Tables sélectionnées par le LLM :</strong><br>';
+            result.selected_tables.forEach(t => {
+                const isExtracted = result.extracted_tables && result.extracted_tables.includes(t);
+                const badgeClass = isExtracted ? 'badge-success' : 'badge-primary';
+                const icon = isExtracted ? '✅' : '📌';
+                html += `<span class="badge ${badgeClass}" style="margin:2px">${icon} ${t}</span> `;
+            });
+            html += '</div>';
+        }
+        
+        // Prompt utilisé
+        if (result.prompt_used) {
+            html += '<div style="margin-top:15px; padding:10px; background:var(--bg-primary); border-radius:5px">';
+            html += '<small><strong>📝 Prompt utilisé :</strong><br>';
+            html += `<pre style="font-size:.8rem">${result.prompt_used}</pre>`;
+            html += '</small></div>';
+        }
+        
+        // Réponse brute LLM
+        if (result.llm_raw_response) {
+            html += '<div style="margin-top:10px">';
+            html += '<button class="btn btn-outline" onclick="toggleRawResponse()" style="padding:5px">🔍 Voir réponse brute LLM</button>';
+            html += '<div id="raw-response" style="display:none; margin-top:10px; padding:10px; background:var(--bg-primary); border-radius:5px">';
+            html += `<pre style="font-size:.75rem">${result.llm_raw_response}</pre>`;
+            html += '</div></div>';
+        }
+        
+        html += '</div>';
+        resultDiv.innerHTML = html;
+        
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Erreur: ${error.message}</div>`;
+    }
+}
+
+async function runLLMFilter(extract) {
+    const db_type = document.getElementById('db-type').value;
+    const db_name = document.getElementById('db-name').value;
+    const table_name = document.getElementById('filter-table').value;
+    const prompt = document.getElementById('filter-prompt').value;
+
+    if (!table_name) {
+        alert('Veuillez entrer un nom de table');
+        return;
+    }
+    
+    if (!prompt) {
+        alert('Veuillez entrer un prompt');
+        return;
+    }
+
+    const resultDiv = document.getElementById('llm-result');
+    const card = document.getElementById('result-card');
+    
+    resultDiv.innerHTML = '<div class="spinner"></div> Consultation du LLM...';
+    card.style.display = 'block';
+
+    try {
+        const response = await fetch("{% url 'llm_generate_filters' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                db_type: db_type,
+                db_name: db_name,
+                table_name: table_name,
+                prompt: prompt,
+                extract: extract
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.error}</div>`;
+            return;
+        }
+
+        const result = data.result;
+        let html = '<div class="alert alert-success">✅ Analyse terminée</div>';
+        
+        html += '<div style="margin:15px 0; padding:15px; background:var(--surface2); border-radius:8px">';
+        
+        // Informations sur la table
+        html += `<div style="margin-bottom:15px"><strong>📋 Table analysée :</strong> ${result.table || table_name}</div>`;
+        
+        // Requête générée
+        if (result.query) {
+            html += '<div style="margin-bottom:15px; padding:10px; background:var(--bg-primary); border-radius:5px">';
+            html += '<strong>🔍 Requête SQL générée :</strong><br>';
+            html += `<pre style="font-size:.8rem">${result.query}</pre>`;
+            html += '</div>';
+        }
+        
+        // Conditions de filtre
+        if (result.filter_conditions && result.filter_conditions.length > 0) {
+            html += '<div style="margin-bottom:15px"><strong>🔧 Conditions de filtre :</strong><br>';
+            result.filter_conditions.forEach((f, i) => {
+                html += `<div style="margin:5px 0; padding:5px; background:var(--surface); border-radius:3px">`;
+                html += `📌 ${f.column} ${f.operator} ${JSON.stringify(f.value)}`;
+                if (f.description) {
+                    html += `<br><small style="color:var(--text-muted)">${f.description}</small>`;
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        
+        // Résultat d'extraction
+        if (result.success !== undefined) {
+            const statusClass = result.success ? 'badge-success' : 'badge-danger';
+            const statusIcon = result.success ? '✅' : '❌';
+            html += `<div style="margin-bottom:15px"><span class="badge ${statusClass}">${statusIcon} Extraction: ${result.success ? 'Réussie' : 'Échouée'}</span>`;
+            if (result.rows_extracted !== undefined) {
+                html += ` <span class="badge badge-info">📊 ${result.rows_extracted} lignes extraites</span>`;
+            }
+            html += '</div>';
+        }
+        
+        // Schéma
+        if (result.schema) {
+            html += '<div style="margin-top:15px"><strong>📊 Schéma de la table :</strong><br>';
+            result.schema.forEach(col => {
+                html += `<span class="badge badge-secondary" style="margin:2px">${col}</span> `;
+            });
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        resultDiv.innerHTML = html;
+        
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Erreur: ${error.message}</div>`;
+    }
+}
+
+async function runLLMAnalyze() {
+    const db_type = document.getElementById('db-type').value;
+    const db_name = document.getElementById('db-name').value;
+    const prompt = document.getElementById('analyze-prompt').value;
+
+    if (!prompt) {
+        alert('Veuillez entrer un objectif d\'analyse');
+        return;
+    }
+
+    const resultDiv = document.getElementById('llm-result');
+    const card = document.getElementById('result-card');
+    
+    resultDiv.innerHTML = '<div class="spinner"></div> Analyse en cours...';
+    card.style.display = 'block';
+
+    try {
+        const response = await fetch("{% url 'llm_analyze_database' %}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                db_type: db_type,
+                db_name: db_name,
+                prompt: prompt
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+            resultDiv.innerHTML = `<div class="alert alert-danger">❌ ${data.error}</div>`;
+            return;
+        }
+
+        const result = data.result;
+        let html = '<div class="alert alert-success">✅ Analyse complète terminée</div>';
+        
+        html += '<div style="margin:15px 0; padding:15px; background:var(--surface2); border-radius:8px">';
+        
+        // Objectif
+        html += `<div style="margin-bottom:15px"><strong>🎯 Objectif :</strong> ${result.prompt || prompt}</div>`;
+        
+        // Analyse du LLM
+        if (result.analysis) {
+            const analysis = result.analysis;
+            
+            if (analysis.overall_purpose) {
+                html += `<div style="margin-bottom:15px; padding:10px; background:var(--surface); border-radius:5px">
+                    <strong>📌 Stratégie proposée :</strong> ${analysis.overall_purpose}
+                </div>`;
+            }
+            
+            // Tables à extraire
+            if (analysis.tables_to_extract) {
+                html += '<div style="margin-bottom:15px"><strong>📋 Tables à extraire :</strong><br>';
+                analysis.tables_to_extract.forEach(table => {
+                    html += `<span class="badge badge-primary" style="margin:2px">📊 ${table}</span> `;
+                });
+                html += '</div>';
+            }
+            
+            // Filtres par table
+            if (analysis.filters) {
+                html += '<div style="margin-bottom:15px"><strong>🔧 Filtres recommandés :</strong><br>';
+                for (const [table, filters] of Object.entries(analysis.filters)) {
+                    html += `<div style="margin:10px 0; padding:10px; background:var(--surface); border-radius:5px">`;
+                    html += `<strong>${table}</strong><br>`;
+                    if (Array.isArray(filters)) {
+                        filters.forEach(f => {
+                            html += `<span class="badge badge-secondary" style="margin:2px">${f.column || '?'} ${f.operator || '='} ${JSON.stringify(f.value)}</span> `;
+                        });
+                    } else {
+                        html += `<span class="badge badge-secondary">${JSON.stringify(filters)}</span>`;
+                    }
+                    html += '</div>';
+                }
+                html += '</div>';
+            }
+        }
+        
+        // Tables disponibles
+        if (result.all_tables) {
+            html += '<div style="margin-top:15px"><strong>📋 Toutes les tables disponibles :</strong><br>';
+            result.all_tables.forEach(t => {
+                html += `<span class="badge badge-info" style="margin:2px">${t}</span> `;
+            });
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        resultDiv.innerHTML = html;
+        
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ Erreur: ${error.message}</div>`;
+    }
+}
+
+function toggleRawResponse() {
+    const el = document.getElementById('raw-response');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+<style>
+.badge-success { background: var(--success); color: var(--bg-primary); }
+.badge-primary { background: var(--primary); color: white; }
+.badge-secondary { background: var(--surface2); color: var(--text-primary); }
+.badge-info { background: var(--info); color: var(--bg-primary); }
+.badge-danger { background: var(--danger); color: white; }
+</style>
+{% endblock %}

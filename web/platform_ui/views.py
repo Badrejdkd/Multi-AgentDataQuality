@@ -5,11 +5,12 @@ import json
 import random
 import pandas as pd
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 import numpy as np
-from django.http import JsonResponse
+from django.utils.encoding import escape_uri_path
+import io
 
 # ── Ajouter cette fonction utilitaire en haut du fichier ──
 def clean_for_json(obj):
@@ -293,11 +294,19 @@ def run_extraction(request):
         # ── Mode 3 : LLM décide quelles tables extraire ──
         elif mode == "llm":
             result = extractor.extract_with_ollama_to_csv(f"{DATA_DIR}/raw")
-            return JsonResponse({
-                "success": True,
-                "mode":    "llm",
-                "message": result,
-            })
+            # S'assurer que result est un dictionnaire
+            if isinstance(result, dict):
+                return JsonResponse({
+                    "success": True,
+                    "mode":    "llm",
+                    "message": result,  # C'est déjà un dict
+                })
+            else:
+                return JsonResponse({
+                    "success": True,
+                    "mode":    "llm",
+                    "message": {"result": str(result)},
+                })
 
         # ── Mode 4 : lister les tables disponibles ──
         elif mode == "list":
@@ -376,12 +385,12 @@ def run_quality(request):
         _storage.save_quality_report(report, table_name)
 
         # ── FIX : nettoyer avant JSON ──
-        return JsonResponse({
+        return JsonResponse(clean_for_json({
             "success": True,
             "table":   table_name,
             "source":  source,
-            "report":  clean_for_json(report),
-        })
+            "report":  report,
+        }))
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
@@ -451,8 +460,557 @@ def run_pipeline(request):
             results.append({
                 "table":  table,
                 "status": f"❌ Erreur : {str(e)}",
-                "rows": 0, "quality_score": 0,
-                "duplicates_removed": 0, "missing_filled": 0,
+                "rows": 0, 
+                "quality_score": 0,
+                "duplicates_removed": 0, 
+                "missing_filled": 0,
             })
 
     return JsonResponse({"success": True, "results": results, "db": db_name})
+
+
+# ════════════════════════════════════════════
+#  FILTRAGE DYNAMIQUE DES DONNÉES
+# ════════════════════════════════════════════
+
+@csrf_exempt
+def filter_data(request):
+    """
+    Filtre dynamique des données avec multiples critères
+    POST params :
+        table_name : nom de la table
+        source : raw | cleaned
+        filters : JSON des filtres (ex: {"age": ">25", "name": "contains:John"})
+        columns : liste des colonnes à afficher (optionnel)
+        limit : nombre max de lignes
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    table_name = request.POST.get("table_name", "")
+    source = request.POST.get("source", "raw")
+    filters_json = request.POST.get("filters", "{}")
+    columns_json = request.POST.get("columns", "[]")
+    limit = int(request.POST.get("limit", 1000))
+
+    if not table_name:
+        return JsonResponse({"error": "table_name requis"}, status=400)
+
+    # Charger le fichier CSV
+    file_path = f"{DATA_DIR}/{source}/{table_name}.csv"
+    if not os.path.exists(file_path):
+        return JsonResponse({"error": f"Fichier introuvable : {file_path}"}, status=404)
+
+    try:
+        df = pd.read_csv(file_path)
+        filters = json.loads(filters_json)
+        columns = json.loads(columns_json)
+
+        # Appliquer les filtres
+        filtered_df = apply_filters(df, filters)
+
+        # Sélectionner les colonnes
+        if columns and len(columns) > 0:
+            # Vérifier que toutes les colonnes existent
+            valid_columns = [c for c in columns if c in filtered_df.columns]
+            if valid_columns:
+                filtered_df = filtered_df[valid_columns]
+
+        # Limiter le nombre de lignes
+        filtered_df = filtered_df.head(limit)
+
+        # Statistiques de filtrage
+        stats = {
+            "original_rows": len(df),
+            "filtered_rows": len(filtered_df),
+            "original_columns": len(df.columns),
+            "filtered_columns": len(filtered_df.columns),
+            "filters_applied": filters,
+        }
+
+        # Preview
+        preview = filtered_df.head(20).where(filtered_df.head(20).notna(), None).to_dict(orient="records")
+
+        return JsonResponse(clean_for_json({
+            "success": True,
+            "table": table_name,
+            "source": source,
+            "stats": stats,
+            "preview": preview,
+            "columns": list(filtered_df.columns),
+        }))
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+def apply_filters(df, filters):
+    """Applique les filtres dynamiques au DataFrame"""
+    filtered_df = df.copy()
+
+    for column, condition in filters.items():
+        if column not in df.columns:
+            continue
+
+        if isinstance(condition, dict):
+            # Filtres multiples sur la même colonne
+            for op, value in condition.items():
+                filtered_df = apply_single_filter(filtered_df, column, op, value)
+        else:
+            # Filtre simple (égalité)
+            filtered_df = apply_single_filter(filtered_df, column, "eq", condition)
+
+    return filtered_df
+
+
+def apply_single_filter(df, column, operator, value):
+    """Applique un opérateur de filtrage spécifique"""
+    try:
+        if operator == "eq":  # Égal à
+            return df[df[column] == value]
+        elif operator == "neq":  # Différent de
+            return df[df[column] != value]
+        elif operator == "gt":  # Plus grand que
+            return df[df[column] > float(value)]
+        elif operator == "gte":  # Plus grand ou égal
+            return df[df[column] >= float(value)]
+        elif operator == "lt":  # Plus petit que
+            return df[df[column] < float(value)]
+        elif operator == "lte":  # Plus petit ou égal
+            return df[df[column] <= float(value)]
+        elif operator == "contains":  # Contient (texte)
+            return df[df[column].astype(str).str.contains(value, case=False, na=False)]
+        elif operator == "startswith":  # Commence par
+            return df[df[column].astype(str).str.startswith(value, na=False)]
+        elif operator == "endswith":  # Termine par
+            return df[df[column].astype(str).str.endswith(value, na=False)]
+        elif operator == "isnull":  # Est null
+            return df[df[column].isna()]
+        elif operator == "notnull":  # N'est pas null
+            return df[df[column].notna()]
+        elif operator == "between":  # Entre deux valeurs
+            if isinstance(value, list) and len(value) == 2:
+                return df[(df[column] >= float(value[0])) & (df[column] <= float(value[1]))]
+        elif operator == "in":  # Dans une liste
+            if isinstance(value, list):
+                return df[df[column].isin(value)]
+        elif operator == "notin":  # Pas dans une liste
+            if isinstance(value, list):
+                return df[~df[column].isin(value)]
+    except:
+        # En cas d'erreur, retourner le df inchangé
+        pass
+    
+    return df
+
+
+# ════════════════════════════════════════════
+#  TÉLÉCHARGEMENT DES FICHIERS
+# ════════════════════════════════════════════
+
+@csrf_exempt
+def download_csv(request):
+    """
+    Télécharger un fichier CSV avec filtres optionnels
+    GET params :
+        table_name : nom de la table
+        source : raw | cleaned | filtered
+        format : csv | excel | json
+        filters : JSON des filtres (optionnel)
+    """
+    table_name = request.GET.get("table_name", "")
+    source = request.GET.get("source", "raw")
+    file_format = request.GET.get("format", "csv")
+    filters_json = request.GET.get("filters", "{}")
+
+    if not table_name:
+        return JsonResponse({"error": "table_name requis"}, status=400)
+
+    # Chemin du fichier source
+    if source == "filtered":
+        # Pour les données filtrées, on utilise le fichier raw ou cleaned comme base
+        base_source = request.GET.get("base_source", "raw")
+        file_path = f"{DATA_DIR}/{base_source}/{table_name}.csv"
+    else:
+        file_path = f"{DATA_DIR}/{source}/{table_name}.csv"
+
+    if not os.path.exists(file_path):
+        return JsonResponse({"error": f"Fichier introuvable : {file_path}"}, status=404)
+
+    try:
+        df = pd.read_csv(file_path)
+
+        # Appliquer les filtres si fournis
+        if filters_json and filters_json != "{}":
+            filters = json.loads(filters_json)
+            df = apply_filters(df, filters)
+            filename = f"{table_name}_filtered"
+        else:
+            filename = f"{table_name}_{source}"
+
+        # Générer le fichier selon le format demandé
+        if file_format == "csv":
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="{escape_uri_path(filename)}.csv"'
+            df.to_csv(response, index=False, encoding='utf-8-sig')
+
+        elif file_format == "excel":
+            response = HttpResponse(content_type='application/vnd.ms-excel')
+            response['Content-Disposition'] = f'attachment; filename="{escape_uri_path(filename)}.xlsx"'
+            with pd.ExcelWriter(response, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Data')
+
+        elif file_format == "json":
+            response = HttpResponse(content_type='application/json')
+            response['Content-Disposition'] = f'attachment; filename="{escape_uri_path(filename)}.json"'
+            json_data = df.to_json(orient='records', date_format='iso', indent=2)
+            response.write(json_data)
+
+        else:
+            return JsonResponse({"error": "Format non supporté"}, status=400)
+
+        # Ajouter des en-têtes pour éviter la mise en cache
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+
+        return response
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def get_column_stats(request):
+    """
+    Obtenir les statistiques d'une colonne pour les filtres
+    """
+    table_name = request.GET.get("table_name", "")
+    source = request.GET.get("source", "raw")
+    column = request.GET.get("column", "")
+
+    if not table_name or not column:
+        return JsonResponse({"error": "table_name et column requis"}, status=400)
+
+    file_path = f"{DATA_DIR}/{source}/{table_name}.csv"
+    if not os.path.exists(file_path):
+        return JsonResponse({"error": "Fichier introuvable"}, status=404)
+
+    try:
+        df = pd.read_csv(file_path)
+        
+        if column not in df.columns:
+            return JsonResponse({"error": f"Colonne '{column}' introuvable"}, status=400)
+
+        col_data = df[column]
+        stats = {}
+
+        if pd.api.types.is_numeric_dtype(col_data):
+            # Statistiques pour colonnes numériques
+            stats = {
+                "type": "numeric",
+                "min": float(col_data.min()) if not pd.isna(col_data.min()) else None,
+                "max": float(col_data.max()) if not pd.isna(col_data.max()) else None,
+                "mean": float(col_data.mean()) if not pd.isna(col_data.mean()) else None,
+                "median": float(col_data.median()) if not pd.isna(col_data.median()) else None,
+                "unique_values": int(col_data.nunique()),
+                "null_count": int(col_data.isna().sum()),
+            }
+        else:
+            # Statistiques pour colonnes textuelles
+            value_counts = col_data.value_counts().head(20).to_dict()
+            stats = {
+                "type": "text",
+                "unique_values": int(col_data.nunique()),
+                "null_count": int(col_data.isna().sum()),
+                "top_values": {str(k): int(v) for k, v in value_counts.items() if pd.notna(k)},
+            }
+
+        return JsonResponse(clean_for_json({
+            "success": True,
+            "column": column,
+            "stats": stats,
+        }))
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+# ════════════════════════════════════════════
+#  VUES LLM POUR EXTRACTION ET FILTRAGE INTELLIGENTS
+# ════════════════════════════════════════════
+
+@csrf_exempt
+def llm_select_tables(request):
+    """
+    POST endpoint pour que le LLM choisisse les tables
+    Body: {
+        "db_type": "sqlite",
+        "db_name": "test.db.sqlite",
+        "prompt": "Je veux les tables clients et commandes",
+        "extract": true/false  # Si true, extrait directement
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        # Essayer de parser le body JSON
+        if request.body:
+            try:
+                data = json.loads(request.body)
+            except:
+                data = request.POST.dict()
+        else:
+            data = request.POST.dict()
+    except:
+        data = request.POST.dict()
+
+    db_type = data.get("db_type", "sqlite")
+    db_name = data.get("db_name", "test.db.sqlite")
+    prompt = data.get("prompt", "")
+    should_extract = data.get("extract", False)
+
+    if not prompt:
+        return JsonResponse({"error": "Prompt requis"}, status=400)
+
+    try:
+        extractor = get_extractor(db_type, db_name)
+    except Exception as e:
+        return JsonResponse({"error": f"Connexion BDD échouée : {str(e)}"}, status=500)
+
+    try:
+        # Vérifier si la méthode existe dans l'extracteur
+        if should_extract and hasattr(extractor, 'extract_with_llm_selection'):
+            # Extraire avec la sélection LLM
+            result = extractor.extract_with_llm_selection(f"{DATA_DIR}/raw", prompt)
+        elif hasattr(extractor, 'select_tables_with_llm'):
+            # Juste sélectionner
+            result = extractor.select_tables_with_llm(prompt)
+        else:
+            # Fallback: méthode simple
+            tables_df = extractor.get_all_tables()
+            table_list = tables_df['TABLE_NAME'].tolist()
+            
+            # Simulation de sélection (prendre les 3 premières tables)
+            selected = table_list[:min(3, len(table_list))]
+            
+            result = {
+                "tables_in_db": table_list,
+                "selected_tables": selected,
+                "llm_raw_response": "Méthode LLM non disponible - sélection par défaut",
+                "prompt_used": prompt
+            }
+            
+            if should_extract:
+                os.makedirs(f"{DATA_DIR}/raw", exist_ok=True)
+                extracted = []
+                for table in selected:
+                    try:
+                        df = extractor.extract_table(table)
+                        df.to_csv(f"{DATA_DIR}/raw/{table}.csv", index=False)
+                        extracted.append(table)
+                    except:
+                        pass
+                result["extracted_tables"] = extracted
+
+        return JsonResponse(clean_for_json({
+            "success": True,
+            "result": result
+        }))
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def llm_generate_filters(request):
+    """
+    POST endpoint pour que le LLM génère des filtres
+    Body: {
+        "db_type": "sqlite",
+        "db_name": "test.db.sqlite",
+        "table_name": "customers",
+        "prompt": "Filtrer les clients actifs",
+        "extract": true/false  # Si true, extrait avec les filtres
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        if request.body:
+            try:
+                data = json.loads(request.body)
+            except:
+                data = request.POST.dict()
+        else:
+            data = request.POST.dict()
+    except:
+        data = request.POST.dict()
+
+    db_type = data.get("db_type", "sqlite")
+    db_name = data.get("db_name", "test.db.sqlite")
+    table_name = data.get("table_name", "")
+    prompt = data.get("prompt", "")
+    should_extract = data.get("extract", False)
+
+    if not table_name:
+        return JsonResponse({"error": "table_name requis"}, status=400)
+    
+    if not prompt:
+        return JsonResponse({"error": "Prompt requis"}, status=400)
+
+    try:
+        extractor = get_extractor(db_type, db_name)
+    except Exception as e:
+        return JsonResponse({"error": f"Connexion BDD échouée : {str(e)}"}, status=500)
+
+    try:
+        # Vérifier si les méthodes LLM existent
+        if should_extract and hasattr(extractor, 'extract_with_llm_filters'):
+            result = extractor.extract_with_llm_filters(table_name, f"{DATA_DIR}/filtered", prompt)
+        elif hasattr(extractor, 'generate_filter_conditions'):
+            result = extractor.generate_filter_conditions(table_name, prompt)
+        else:
+            # Fallback: méthode simple
+            # Récupérer le schéma
+            schema_df = extractor.extract_table_schema(table_name)
+            schema = []
+            if not schema_df.empty:
+                for _, row in schema_df.iterrows():
+                    schema.append(f"{row['COLUMN_NAME']} ({row['DATA_TYPE']})")
+            
+            # Filtres simulés
+            filters = {
+                "filters": [
+                    {
+                        "column": "id",
+                        "operator": ">",
+                        "value": "0",
+                        "description": "Filtre par défaut"
+                    }
+                ],
+                "logic": "AND",
+                "explanation": "Filtres par défaut (méthode LLM non disponible)"
+            }
+            
+            result = {
+                "table": table_name,
+                "schema": schema,
+                "filters": filters,
+                "llm_raw_response": "Méthode LLM non disponible",
+                "prompt_used": prompt
+            }
+            
+            if should_extract:
+                # Exécuter une requête simple
+                query = f"SELECT * FROM {table_name} LIMIT 100"
+                try:
+                    df = extractor.extract_data(query)
+                    os.makedirs(f"{DATA_DIR}/filtered", exist_ok=True)
+                    path = f"{DATA_DIR}/filtered/{table_name}_filtered.csv"
+                    df.to_csv(path, index=False)
+                    result["success"] = True
+                    result["query"] = query
+                    result["rows_extracted"] = len(df)
+                    result["saved_to"] = path
+                except Exception as e:
+                    result["success"] = False
+                    result["error"] = str(e)
+
+        return JsonResponse(clean_for_json({
+            "success": True,
+            "result": result
+        }))
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def llm_analyze_database(request):
+    """
+    POST endpoint pour analyse complète par LLM
+    Body: {
+        "db_type": "sqlite",
+        "db_name": "test.db.sqlite",
+        "prompt": "Analyse les ventes du dernier trimestre"
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        if request.body:
+            try:
+                data = json.loads(request.body)
+            except:
+                data = request.POST.dict()
+        else:
+            data = request.POST.dict()
+    except:
+        data = request.POST.dict()
+
+    db_type = data.get("db_type", "sqlite")
+    db_name = data.get("db_name", "test.db.sqlite")
+    prompt = data.get("prompt", "")
+
+    if not prompt:
+        return JsonResponse({"error": "Prompt requis"}, status=400)
+
+    try:
+        extractor = get_extractor(db_type, db_name)
+    except Exception as e:
+        return JsonResponse({"error": f"Connexion BDD échouée : {str(e)}"}, status=500)
+
+    try:
+        if hasattr(extractor, 'analyze_with_llm'):
+            result = extractor.analyze_with_llm(prompt)
+        else:
+            # Fallback
+            tables_df = extractor.get_all_tables()
+            all_tables = tables_df['TABLE_NAME'].tolist() if not tables_df.empty else []
+            
+            # Récupérer les schémas
+            schemas = {}
+            for table in all_tables[:3]:
+                try:
+                    schema_df = extractor.extract_table_schema(table)
+                    schemas[table] = [
+                        f"{row['COLUMN_NAME']} ({row['DATA_TYPE']})" 
+                        for _, row in schema_df.iterrows()
+                    ][:5]
+                except:
+                    schemas[table] = ["Schema indisponible"]
+            
+            analysis = {
+                "tables_to_extract": all_tables[:3],
+                "filters": {
+                    table: [{"column": "id", "operator": ">", "value": "0"}]
+                    for table in all_tables[:2]
+                },
+                "overall_purpose": f"Analyse basée sur: {prompt}"
+            }
+            
+            result = {
+                "analysis": analysis,
+                "all_tables": all_tables,
+                "prompt": prompt,
+                "llm_raw_response": "Méthode LLM non disponible - analyse par défaut"
+            }
+
+        return JsonResponse(clean_for_json({
+            "success": True,
+            "result": result
+        }))
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+def llm_interface(request):
+    """Page d'interface pour le LLM"""
+    return render(request, "llm_interface.html", {
+        "page": "llm",
+        "db_types": DB_TYPES,
+    })

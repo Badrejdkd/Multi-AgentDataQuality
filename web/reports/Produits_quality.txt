@@ -1,0 +1,1 @@
+{'rows': 10, 'columns': 7, 'missing_values': {'ProduitID': 0, 'NomProduit': 0, 'Categorie': 0, 'PrixUnitaire': 0, 'Stock': 0, 'DateAjout': 0, 'FournisseurID': 0}, 'duplicates': np.int64(0), 'outliers': {'ProduitID': np.int64(0), 'Stock': np.int64(1), 'FournisseurID': np.int64(0)}, 'quality_score': np.float64(100.0)}

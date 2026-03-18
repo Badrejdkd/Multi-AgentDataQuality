@@ -325,3 +325,15 @@ ValueError: Unsupported database type
 [PIPELINE] 'Commentaires' — score:nan% — dups:0 — missing:0
 [PIPELINE] 'Candidatures' — score:nan% — dups:0 — missing:0
 [PIPELINE] 'sysdiagrams' — score:nan% — dups:0 — missing:0
+[ERROR] 'Clients' — Cannot perform reduction 'median' with string dtype
+[ERROR] 'Produits' — Can only use .str accessor with string values, not decimal
+[ERROR] 'Commandes' — Cannot perform reduction 'median' with string dtype
+[ERROR] 'DetailsCommandes' — Can only use .str accessor with string values, not decimal
+[ERROR] 'Fournisseurs' — Cannot perform reduction 'median' with string dtype
+[PIPELINE] 'AvisClients' — score:100.0% — dups:0 — missing:0
+[PIPELINE] 'Clients' — score:95.38% — dups:0 — missing:6
+[PIPELINE] 'Produits' — score:100.0% — dups:0 — missing:0
+[PIPELINE] 'Commandes' — score:92.5% — dups:0 — missing:6
+[PIPELINE] 'DetailsCommandes' — score:100.0% — dups:0 — missing:0
+[PIPELINE] 'Fournisseurs' — score:94.29% — dups:0 — missing:2
+[PIPELINE] 'AvisClients' — score:100.0% — dups:0 — missing:0

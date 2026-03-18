@@ -1,0 +1,1 @@
+{'rows': 15, 'columns': 6, 'missing_values': {'DetailID': 0, 'CommandeID': 0, 'ProduitID': 0, 'Quantite': 0, 'PrixUnitaire': 0, 'Remise': 0}, 'duplicates': np.int64(0), 'outliers': {'DetailID': np.int64(0), 'CommandeID': np.int64(0), 'ProduitID': np.int64(0), 'Quantite': np.int64(1)}, 'quality_score': np.float64(100.0)}

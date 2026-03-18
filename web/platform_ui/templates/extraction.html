@@ -1,7 +1,10 @@
+<!-- templates/extraction.html - CORRIGÉ -->
+
 {% extends "base.html" %}
 {% block title %}Extraction{% endblock %}
 {% block topbar_title %}📥 Extraction Agent{% endblock %}
 {% block content %}
+
 <div class="section-title">Agent d'Extraction</div>
 <p class="section-sub">Connexion à ta base de données réelle via SQLAlchemy.</p>
 
@@ -55,7 +58,7 @@
   </div>
 </div>
 
-<div id="result-box">
+<div id="result-box" style="display:none">
   <div class="card">
     <div class="card-title">👁️ Aperçu (10 premières lignes)</div>
     <div class="table-wrap"><table class="data-table" id="preview-table"></table></div>
@@ -77,10 +80,12 @@ function toggleTableInput() {
   const mode = document.getElementById('mode').value;
   document.getElementById('table-group').style.display = mode === 'single' ? 'block' : 'none';
 }
+
 async function runExtraction() {
   const btn = document.getElementById('extract-btn');
   const summary = document.getElementById('result-summary');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Connexion…';
+  btn.disabled = true; 
+  btn.innerHTML = '<span class="spinner"></span> Connexion…';
   summary.innerHTML = '<span class="spinner"></span> Connexion à la base…';
 
   const fd = new FormData();
@@ -89,73 +94,144 @@ async function runExtraction() {
   fd.append('mode',       document.getElementById('mode').value);
   fd.append('table_name', document.getElementById('table-name')?.value || '');
 
-  const r    = await fetch("{% url 'run_extraction' %}", {method:'POST', body:fd});
-  const data = await r.json();
-  btn.disabled = false; btn.innerHTML = '📥 Lancer l\'extraction';
+  try {
+    const r    = await fetch("{% url 'run_extraction' %}", {method:'POST', body:fd});
+    const data = await r.json();
+    
+    btn.disabled = false; 
+    btn.innerHTML = '📥 Lancer l\'extraction';
 
-  if (data.error) {
-    summary.innerHTML = `<div style="color:var(--accent2);padding:12px;background:rgba(255,101,132,.1);border-radius:8px;border:1px solid rgba(255,101,132,.3)">❌ ${data.error}</div>`;
-    return;
+    if (data.error) {
+      summary.innerHTML = `<div style="color:var(--accent2);padding:12px;background:rgba(255,101,132,.1);border-radius:8px;border:1px solid rgba(255,101,132,.3)">❌ ${data.error}</div>`;
+      return;
+    }
+
+    // Mode LIST
+    if (data.mode === 'list') {
+      let html = '<div class="alert alert-success">✅ Connexion réussie !</div>';
+      html += `<div style="margin-bottom:12px;color:var(--text-muted);font-size:.85rem">${data.tables.length} table(s) trouvée(s)</div>`;
+      html += '<div style="display:flex;flex-direction:column;gap:6px">';
+      data.tables.forEach(t => {
+        html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:6px">
+          <span style="font-weight:600">📋 ${t}</span>
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:.75rem"
+            onclick="document.getElementById('mode').value='single';document.getElementById('table-name').value='${t}';toggleTableInput()">
+            Sélectionner
+          </button>
+        </div>`;
+      });
+      html += '</div>';
+      summary.innerHTML = html;
+      return;
+    }
+
+    // Mode SINGLE
+    if (data.mode === 'single') {
+      summary.innerHTML = `
+        <div class="alert alert-success">✅ Extraction réussie !</div>
+        <div class="grid-2" style="gap:10px">
+          <div style="background:var(--surface2);padding:12px;border-radius:8px">
+            <div style="font-size:.75rem;color:var(--text-muted)">TABLE</div>
+            <div style="font-weight:600;color:var(--accent)">${data.table}</div>
+          </div>
+          <div style="background:var(--surface2);padding:12px;border-radius:8px">
+            <div style="font-size:.75rem;color:var(--text-muted)">LIGNES</div>
+            <div style="font-weight:600">${data.rows}</div>
+          </div>
+          <div style="background:var(--surface2);padding:12px;border-radius:8px">
+            <div style="font-size:.75rem;color:var(--text-muted)">COLONNES</div>
+            <div style="font-weight:600;font-size:.8rem">${data.columns.join(', ')}</div>
+          </div>
+          <div style="background:var(--surface2);padding:12px;border-radius:8px">
+            <div style="font-size:.75rem;color:var(--text-muted)">SAUVEGARDÉ</div>
+            <div style="font-weight:600;color:var(--green);font-size:.8rem">${data.saved_to}</div>
+          </div>
+        </div>`;
+      
+      // Afficher l'aperçu
+      if (data.preview && data.preview.length > 0) {
+        const cols = Object.keys(data.preview[0] || {});
+        let previewHtml = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+        data.preview.forEach(row => {
+          previewHtml += '<tr>' + cols.map(c => {
+            const v = row[c];
+            return `<td>${v === null ? '<span style="color:var(--accent2);font-style:italic">null</span>' : v}</td>`;
+          }).join('') + '</tr>';
+        });
+        document.getElementById('preview-table').innerHTML = previewHtml + '</tbody>';
+        document.getElementById('result-box').style.display = 'block';
+      }
+      
+      return;
+    }
+
+    // Mode ALL
+    if (data.mode === 'all') {
+      let html = '<div class="alert alert-success">✅ Extraction terminée !</div>';
+      html += `<div style="margin:10px 0">${data.message}</div>`;
+      if (data.tables) {
+        html += '<div style="color:var(--text-muted);font-size:.85rem">Tables extraites :<br>';
+        data.tables.forEach(t => {
+          html += `<span class="badge badge-info" style="margin:2px">${t}</span> `;
+        });
+        html += '</div>';
+      }
+      summary.innerHTML = html;
+      return;
+    }
+
+    // Mode LLM - CORRECTION ICI
+    if (data.mode === 'llm') {
+      let html = '<div class="alert alert-success">✅ Extraction LLM terminée !</div>';
+      
+      // Vérifier la structure de data.message
+      if (typeof data.message === 'object') {
+        // C'est un objet JSON
+        const msg = data.message;
+        
+        html += '<div style="margin:15px 0; padding:15px; background:var(--surface2); border-radius:8px">';
+        
+        // Tables dans la BDD
+        if (msg.tables_in_db) {
+          html += '<div style="margin-bottom:10px"><strong>📋 Tables disponibles en BDD :</strong><br>';
+          msg.tables_in_db.forEach(t => {
+            html += `<span class="badge badge-info" style="margin:2px">${t}</span> `;
+          });
+          html += '</div>';
+        }
+        
+        // Tables choisies par le LLM
+        if (msg.tables_chosen) {
+          html += '<div style="margin-bottom:10px"><strong>🤖 Tables choisies par le LLM :</strong><br>';
+          msg.tables_chosen.forEach(t => {
+            html += `<span class="badge badge-success" style="margin:2px">✅ ${t}</span> `;
+          });
+          html += '</div>';
+        }
+        
+        // Réponse brute du LLM (optionnel)
+        if (msg.llm_raw_response) {
+          html += '<div style="margin-top:10px; padding:10px; background:var(--bg-primary); border-radius:5px">';
+          html += '<small><strong>Réponse LLM brute:</strong><br>';
+          html += `<pre style="font-size:.75rem; overflow-x:auto">${msg.llm_raw_response}</pre>`;
+          html += '</small></div>';
+        }
+        
+        html += '</div>';
+      } else {
+        // C'est une chaîne simple
+        html += `<div>${data.message}</div>`;
+      }
+      
+      summary.innerHTML = html;
+      return;
+    }
+
+  } catch (error) {
+    btn.disabled = false; 
+    btn.innerHTML = '📥 Lancer l\'extraction';
+    summary.innerHTML = `<div style="color:var(--accent2);padding:12px;background:rgba(255,101,132,.1);border-radius:8px">❌ Erreur: ${error.message}</div>`;
   }
-
-  // Mode LIST
-  if (data.mode === 'list') {
-    let html = '<div class="alert alert-success">✅ Connexion réussie !</div>';
-    html += `<div style="margin-bottom:12px;color:var(--text-muted);font-size:.85rem">${data.tables.length} table(s) trouvée(s)</div>`;
-    html += '<div style="display:flex;flex-direction:column;gap:6px">';
-    data.tables.forEach(t => {
-      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:6px">
-        <span style="font-weight:600">📋 ${t}</span>
-        <button class="btn btn-outline" style="padding:4px 12px;font-size:.75rem"
-          onclick="document.getElementById('mode').value='single';document.getElementById('table-name').value='${t}';toggleTableInput()">
-          Sélectionner
-        </button>
-      </div>`;
-    });
-    html += '</div>';
-    summary.innerHTML = html;
-    return;
-  }
-
-  // Mode SINGLE
-  if (data.mode === 'single') {
-    summary.innerHTML = `
-      <div class="alert alert-success">✅ Extraction réussie !</div>
-      <div class="grid-2" style="gap:10px">
-        <div style="background:var(--surface2);padding:12px;border-radius:8px">
-          <div style="font-size:.75rem;color:var(--text-muted)">TABLE</div>
-          <div style="font-weight:600;color:var(--accent)">${data.table}</div>
-        </div>
-        <div style="background:var(--surface2);padding:12px;border-radius:8px">
-          <div style="font-size:.75rem;color:var(--text-muted)">LIGNES</div>
-          <div style="font-weight:600">${data.rows}</div>
-        </div>
-        <div style="background:var(--surface2);padding:12px;border-radius:8px">
-          <div style="font-size:.75rem;color:var(--text-muted)">COLONNES</div>
-          <div style="font-weight:600;font-size:.8rem">${data.columns.join(', ')}</div>
-        </div>
-        <div style="background:var(--surface2);padding:12px;border-radius:8px">
-          <div style="font-size:.75rem;color:var(--text-muted)">SAUVEGARDÉ</div>
-          <div style="font-weight:600;color:var(--green);font-size:.8rem">${data.saved_to}</div>
-        </div>
-      </div>`;
-    const cols = Object.keys(data.preview[0] || {});
-    let html = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
-    data.preview.forEach(row => {
-      html += '<tr>' + cols.map(c => {
-        const v = row[c];
-        return `<td>${v === null ? '<span style="color:var(--accent2);font-style:italic">null</span>' : v}</td>`;
-      }).join('') + '</tr>';
-    });
-    document.getElementById('preview-table').innerHTML = html + '</tbody>';
-    document.getElementById('result-box').style.display = 'block';
-    return;
-  }
-
-  // Mode ALL ou LLM
-  summary.innerHTML = `
-    <div class="alert alert-success">✅ ${data.message}</div>
-    ${data.tables ? '<div style="color:var(--text-muted);font-size:.85rem">Tables extraites : ' + data.tables.join(', ') + '</div>' : ''}`;
 }
 </script>
 {% endblock %}

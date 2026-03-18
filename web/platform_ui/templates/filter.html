@@ -1,0 +1,383 @@
+<!-- templates/filter_data.html -->
+{% extends "base.html" %}
+{% block title %}Filtrage des Données{% endblock %}
+{% block topbar_title %}🔍 Filtrage Avancé{% endblock %}
+{% block content %}
+
+<div class="section-title">Filtrage Dynamique des Données</div>
+<p class="section-sub">Filtrez vos données avec des critères multiples et téléchargez les résultats.</p>
+
+<div class="grid-2">
+    <!-- Panneau de configuration -->
+    <div class="card">
+        <div class="card-title">⚙️ Configuration du filtrage</div>
+
+        <!-- Sélection de la table -->
+        <div class="form-group">
+            <label class="form-label">📁 Table à filtrer</label>
+            <select class="form-control" id="table-select" onchange="loadTableColumns()">
+                <option value="">-- Choisir une table --</option>
+                {% for table in all_tables %}
+                <option value="{{ table }}">{{ table }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Source (raw/cleaned) -->
+        <div class="form-group">
+            <label class="form-label">📂 Source</label>
+            <select class="form-control" id="source-select">
+                <option value="raw">📁 Données brutes (raw)</option>
+                <option value="cleaned">✨ Données nettoyées (cleaned)</option>
+            </select>
+        </div>
+
+        <!-- Colonnes disponibles -->
+        <div class="form-group">
+            <label class="form-label">📊 Colonnes à afficher</label>
+            <div id="columns-container" style="max-height:200px; overflow-y:auto; padding:10px; background:var(--surface2); border-radius:8px;">
+                <div style="color:var(--text-muted); text-align:center;">Sélectionnez d'abord une table</div>
+            </div>
+            <div style="margin-top:8px">
+                <button class="btn btn-outline" onclick="selectAllColumns()" style="padding:4px 8px; font-size:.8rem">✓ Tout sélectionner</button>
+                <button class="btn btn-outline" onclick="deselectAllColumns()" style="padding:4px 8px; font-size:.8rem">✗ Tout désélectionner</button>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Filtres -->
+        <div class="form-group">
+            <label class="form-label">🔍 Filtres (conditions)</label>
+            <div id="filters-container">
+                <!-- Les filtres seront ajoutés ici dynamiquement -->
+            </div>
+            <button class="btn btn-outline" onclick="addFilter()" style="width:100%; margin-top:10px">
+                ➕ Ajouter un filtre
+            </button>
+        </div>
+
+        <!-- Limite -->
+        <div class="form-group">
+            <label class="form-label">📏 Limite de lignes</label>
+            <input type="number" class="form-control" id="limit-input" value="1000" min="1" max="10000">
+        </div>
+
+        <button class="btn btn-primary" id="filter-btn" onclick="applyFilters()" style="width:100%">
+            🔍 Appliquer les filtres
+        </button>
+    </div>
+
+    <!-- Résumé et téléchargement -->
+    <div class="card">
+        <div class="card-title">📊 Résumé du filtrage</div>
+        <div id="filter-summary" style="color:var(--text-muted); min-height:200px">
+            Sélectionnez une table et appliquez des filtres.
+        </div>
+
+        <!-- Options de téléchargement -->
+        <div id="download-options" style="display:none; margin-top:20px">
+            <hr class="divider">
+            <div class="form-group">
+                <label class="form-label">💾 Télécharger les données filtrées</label>
+                <div style="display:flex; gap:10px">
+                    <button class="btn btn-success" onclick="downloadData('csv')" style="flex:1">
+                        📥 CSV
+                    </button>
+                    <button class="btn btn-success" onclick="downloadData('excel')" style="flex:1">
+                        📊 Excel
+                    </button>
+                    <button class="btn btn-success" onclick="downloadData('json')" style="flex:1">
+                        📋 JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Résultats avec pagination -->
+<div id="results-container" style="display:none">
+    <div class="card">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center">
+            <span>👁️ Aperçu des données filtrées</span>
+            <div>
+                <span id="row-count" class="badge badge-info"></span>
+                <button class="btn btn-outline" onclick="refreshPreview()" style="margin-left:10px; padding:4px 8px">
+                    🔄 Rafraîchir
+                </button>
+            </div>
+        </div>
+        <div class="table-wrap" style="max-height:400px; overflow-y:auto">
+            <table class="data-table" id="preview-table">
+                <thead id="preview-header"></thead>
+                <tbody id="preview-body"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTable = '';
+let currentSource = 'raw';
+let currentColumns = [];
+let currentFilters = {};
+let currentLimit = 1000;
+let filteredData = null;
+
+// Charger les colonnes de la table sélectionnée
+async function loadTableColumns() {
+    currentTable = document.getElementById('table-select').value;
+    currentSource = document.getElementById('source-select').value;
+    
+    if (!currentTable) return;
+
+    const response = await fetch(`/data/column-stats/?table_name=${currentTable}&source=${currentSource}`);
+    const data = await response.json();
+
+    if (data.success) {
+        displayColumns(data.columns);
+    }
+}
+
+// Afficher les colonnes avec checkboxes
+function displayColumns(columns) {
+    const container = document.getElementById('columns-container');
+    currentColumns = columns;
+    
+    let html = '';
+    columns.forEach(col => {
+        html += `
+            <label style="display:flex; align-items:center; gap:8px; padding:5px; cursor:pointer">
+                <input type="checkbox" class="column-checkbox" value="${col}" checked onchange="updateSelectedColumns()">
+                <span>${col}</span>
+            </label>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// Mettre à jour les colonnes sélectionnées
+function updateSelectedColumns() {
+    const checkboxes = document.querySelectorAll('.column-checkbox:checked');
+    currentColumns = Array.from(checkboxes).map(cb => cb.value);
+}
+
+// Ajouter un nouveau filtre
+function addFilter() {
+    const container = document.getElementById('filters-container');
+    const filterId = 'filter-' + Date.now();
+    
+    const html = `
+        <div id="${filterId}" class="filter-item" style="background:var(--surface2); padding:15px; border-radius:8px; margin-bottom:10px">
+            <div style="display:flex; gap:8px; margin-bottom:8px">
+                <select class="form-control filter-column" style="flex:2" onchange="updateFilterOperators('${filterId}')">
+                    <option value="">-- Colonne --</option>
+                    ${currentColumns.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+                <select class="form-control filter-operator" style="flex:1">
+                    <option value="eq">= (égal)</option>
+                    <option value="neq">≠ (différent)</option>
+                    <option value="gt">> (plus grand)</option>
+                    <option value="gte">≥ (plus grand ou égal)</option>
+                    <option value="lt">< (plus petit)</option>
+                    <option value="lte">≤ (plus petit ou égal)</option>
+                    <option value="contains">contient</option>
+                    <option value="startswith">commence par</option>
+                    <option value="endswith">finit par</option>
+                    <option value="isnull">est null</option>
+                    <option value="notnull">n'est pas null</option>
+                    <option value="between">entre</option>
+                    <option value="in">dans la liste</option>
+                </select>
+                <button class="btn btn-outline" style="padding:8px; flex:0" onclick="removeFilter('${filterId}')">
+                    ❌
+                </button>
+            </div>
+            <div class="filter-value-container">
+                <input type="text" class="form-control filter-value" placeholder="Valeur">
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+// Supprimer un filtre
+function removeFilter(filterId) {
+    document.getElementById(filterId).remove();
+}
+
+// Appliquer les filtres
+async function applyFilters() {
+    if (!currentTable) {
+        alert('Sélectionnez d\'abord une table');
+        return;
+    }
+
+    const btn = document.getElementById('filter-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Filtrage en cours...';
+
+    // Construire l'objet filters
+    const filters = {};
+    document.querySelectorAll('.filter-item').forEach(item => {
+        const column = item.querySelector('.filter-column').value;
+        const operator = item.querySelector('.filter-operator').value;
+        const value = item.querySelector('.filter-value')?.value || '';
+        
+        if (column && operator) {
+            if (!filters[column]) filters[column] = {};
+            filters[column][operator] = value;
+        }
+    });
+
+    currentFilters = filters;
+    currentLimit = document.getElementById('limit-input').value;
+
+    const formData = new FormData();
+    formData.append('table_name', currentTable);
+    formData.append('source', currentSource);
+    formData.append('filters', JSON.stringify(filters));
+    formData.append('columns', JSON.stringify(currentColumns));
+    formData.append('limit', currentLimit);
+
+    const response = await fetch("{% url 'filter_data' %}", {
+        method: 'POST',
+        body: formData
+    });
+    
+    const data = await response.json();
+    
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Appliquer les filtres';
+
+    if (data.error) {
+        alert('Erreur: ' + data.error);
+        return;
+    }
+
+    // Afficher le résumé
+    displayFilterSummary(data.stats);
+    
+    // Afficher l'aperçu
+    displayPreview(data.preview);
+    
+    // Afficher les options de téléchargement
+    document.getElementById('download-options').style.display = 'block';
+    document.getElementById('results-container').style.display = 'block';
+    
+    // Sauvegarder les données pour le téléchargement
+    filteredData = data;
+}
+
+// Afficher le résumé du filtrage
+function displayFilterSummary(stats) {
+    const html = `
+        <div style="padding:15px">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <span>📊 Lignes originales:</span>
+                <strong>${stats.original_rows}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <span>🔍 Lignes après filtrage:</span>
+                <strong style="color:var(--success)">${stats.filtered_rows}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <span>📋 Colonnes affichées:</span>
+                <strong>${stats.filtered_columns} / ${stats.original_columns}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px">
+                <span>⚡ Filtres appliqués:</span>
+                <strong>${Object.keys(stats.filters_applied).length}</strong>
+            </div>
+            <div style="margin-top:15px">
+                <div class="progress">
+                    <div class="progress-bar success" style="width:${(stats.filtered_rows/stats.original_rows*100)}%"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('filter-summary').innerHTML = html;
+    document.getElementById('row-count').innerHTML = `${stats.filtered_rows} lignes`;
+}
+
+// Afficher l'aperçu
+function displayPreview(preview) {
+    if (!preview || preview.length === 0) {
+        document.getElementById('preview-body').innerHTML = '<tr><td colspan="100" style="text-align:center">Aucune donnée</td></tr>';
+        return;
+    }
+
+    const columns = Object.keys(preview[0]);
+    
+    // En-tête
+    let headerHtml = '<tr>';
+    columns.forEach(col => {
+        headerHtml += `<th>${col}</th>`;
+    });
+    headerHtml += '</tr>';
+    document.getElementById('preview-header').innerHTML = headerHtml;
+
+    // Corps
+    let bodyHtml = '';
+    preview.forEach(row => {
+        bodyHtml += '<tr>';
+        columns.forEach(col => {
+            let value = row[col];
+            if (value === null || value === undefined) {
+                value = '<span style="color:var(--danger); font-style:italic">null</span>';
+            } else if (typeof value === 'number') {
+                value = `<span style="color:var(--info)">${value}</span>`;
+            }
+            bodyHtml += `<td>${value}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    document.getElementById('preview-body').innerHTML = bodyHtml;
+}
+
+// Télécharger les données
+function downloadData(format) {
+    if (!currentTable) return;
+
+    let url = `/data/download/?table_name=${currentTable}&source=filtered&base_source=${currentSource}&format=${format}`;
+    
+    if (Object.keys(currentFilters).length > 0) {
+        url += `&filters=${encodeURIComponent(JSON.stringify(currentFilters))}`;
+    }
+
+    window.location.href = url;
+}
+
+// Rafraîchir l'aperçu
+function refreshPreview() {
+    applyFilters();
+}
+
+// Sélectionner toutes les colonnes
+function selectAllColumns() {
+    document.querySelectorAll('.column-checkbox').forEach(cb => cb.checked = true);
+    updateSelectedColumns();
+}
+
+// Désélectionner toutes les colonnes
+function deselectAllColumns() {
+    document.querySelectorAll('.column-checkbox').forEach(cb => cb.checked = false);
+    updateSelectedColumns();
+}
+
+// Initialisation
+document.getElementById('source-select').addEventListener('change', loadTableColumns);
+</script>
+
+<style>
+.filter-item {
+    transition: all 0.3s ease;
+}
+.filter-item:hover {
+    transform: translateX(5px);
+    border-left: 3px solid var(--primary);
+}
+</style>
+{% endblock %}

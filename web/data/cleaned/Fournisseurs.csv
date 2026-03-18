@@ -1,0 +1,6 @@
+FournisseurID,NomFournisseur,Contact,Email,Telephone,Pays,Evaluation
+101,TechDistrib,Jean Michel,contact@techdistrib.com,0147258369,France,5.0
+102,GlobalElectro,Sarah Johnson,s.johnson@globalelectro.com,+442079460000,UK,4.0
+103,PeriphExpress,Jean Michel,info@periphexpress.fr,0325478965,France,4.0
+104,AudioWorld,Pierre Durand,pierre@audioworld.fr,0458963214,France,3.0
+105,InfoStock,Marie Lambert,marie@infostock.fr,0569874123,France,4.0

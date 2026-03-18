@@ -1,0 +1,11 @@
+ProduitID,NomProduit,Categorie,PrixUnitaire,Stock,DateAjout,FournisseurID
+1,Laptop Pro,Informatique,1200.00,50,2023-01-10,101
+2,Smartphone X,Téléphonie,800.00,100,2023-01-15,102
+3,Tablette Ultra,Informatique,450.00,75,2023-02-01,101
+4,"Écran 24""",Périphériques,250.00,30,2023-02-10,103
+5,Souris sans fil,Périphériques,35.00,200,2023-01-20,102
+6,Clavier mécanique,Périphériques,89.00,150,2023-03-05,103
+7,Disque dur 1To,Stockage,75.00,80,2023-02-15,101
+8,Casque audio,Audio,120.00,60,2023-03-10,104
+9,Webcam HD,Périphériques,60.00,45,2023-02-20,102
+10,Imprimante Laser,Périphériques,300.00,25,2023-01-25,103

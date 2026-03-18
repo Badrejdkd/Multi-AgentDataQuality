@@ -1,0 +1,11 @@
+CommandeID,ClientID,DateCommande,MontantTotal,Statut,ModePaiement,DateLivraison,AdresseLivraison
+1001,1,2023-05-10 14:30:00,1250.00,Livrée,Carte bancaire,2023-05-15,"10 Rue de Paris, Paris"
+1002,2,2023-05-12 09:15:00,800.00,Livrée,PayPal,2023-05-18,"25 Avenue Victor Hugo, Lyon"
+1003,3,2023-05-15 16:45:00,450.00,Annulée,Carte bancaire,2023-05-15,"15 Rue de la Paix, Marseille"
+1004,1,2023-05-18 11:20:00,324.00,En cours,Carte bancaire,2023-05-15,"10 Rue de Paris, Paris"
+1005,5,2023-05-20 10:00:00,155.00,Expédiée,Virement,2023-05-25,Adresse non spécifiée
+1006,4,2023-05-22 13:10:00,300.00,En traitement,Carte bancaire,2023-05-15,"8 Boulevard Haussmann, Bordeaux"
+1007,8,2023-05-25 15:30:00,600.00,Livrée,PayPal,2023-05-28,"5 Place de la Mairie, Nantes"
+1008,2,2023-05-28 08:45:00,120.00,Livrée,,2023-06-01,"25 Avenue Victor Hugo, Lyon"
+1009,7,2023-06-01 12:00:00,875.00,Expédiée,Carte bancaire,2023-06-05,"12 Rue Nationale, Toulouse"
+1010,10,2023-06-03 17:20:00,75.00,En cours,Virement,2023-05-15,"18 Rue de la Gare, Rennes"

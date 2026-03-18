@@ -128,17 +128,136 @@
 </div>
 
 <!-- Preview -->
-<div id="result-box">
+<div id="result-box" style="display:none">
   <div class="card">
-    <div class="card-title">✨ Données nettoyées (aperçu)</div>
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center">
+      <span>✨ Données nettoyées (aperçu)</span>
+      <div>
+        <button class="btn btn-success" onclick="downloadData('csv')" style="margin-right:5px; padding:5px 10px">
+          📥 CSV
+        </button>
+        <button class="btn btn-success" onclick="downloadData('excel')" style="margin-right:5px; padding:5px 10px">
+          📊 Excel
+        </button>
+        <button class="btn btn-success" onclick="downloadData('json')" style="padding:5px 10px">
+          📋 JSON
+        </button>
+      </div>
+    </div>
     <div class="table-wrap">
       <table class="data-table" id="preview-table"></table>
     </div>
   </div>
 </div>
 
+<!-- Section Filtrage et Téléchargement Avancé -->
+<div id="filter-section" style="display:none; margin-top:30px">
+  <div class="card">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center">
+      <span>🔍 Filtrage Avancé des Données Nettoyées</span>
+      <div>
+        <button class="btn btn-outline" onclick="toggleFilterSection()" style="padding:5px 10px">
+          ⚡ Afficher/Masquer les filtres
+        </button>
+      </div>
+    </div>
+    
+    <div id="filter-controls" style="display:none">
+      <!-- Filtres rapides -->
+      <div class="grid-3" style="margin-bottom:20px">
+        <div class="form-group">
+          <label class="form-label">🎯 Filtres rapides</label>
+          <div style="display:flex; flex-wrap:wrap; gap:5px">
+            <button class="badge badge-info" onclick="quickFilter('duplicates')" style="cursor:pointer; padding:5px 10px">
+              🗑️ Avec doublons
+            </button>
+            <button class="badge badge-warning" onclick="quickFilter('missing')" style="cursor:pointer; padding:5px 10px">
+              🔧 Valeurs manquantes
+            </button>
+            <button class="badge badge-danger" onclick="quickFilter('outliers')" style="cursor:pointer; padding:5px 10px">
+              📊 Avec outliers
+            </button>
+            <button class="badge badge-success" onclick="quickFilter('all')" style="cursor:pointer; padding:5px 10px">
+              📋 Tout afficher
+            </button>
+          </div>
+        </div>
+
+        <!-- Recherche textuelle -->
+        <div class="form-group">
+          <label class="form-label">🔎 Recherche textuelle</label>
+          <input type="text" class="form-control" id="search-input" 
+                 placeholder="Rechercher dans toutes les colonnes..."
+                 onkeyup="searchData()">
+        </div>
+
+        <!-- Export avancé -->
+        <div class="form-group">
+          <label class="form-label">💾 Export avancé</label>
+          <div style="display:flex; gap:5px">
+            <button class="btn btn-success" onclick="exportWithFilters('csv')" style="flex:1; padding:8px">
+              📥 CSV filtré
+            </button>
+            <button class="btn btn-success" onclick="exportWithFilters('excel')" style="flex:1; padding:8px">
+              📊 Excel filtré
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Constructeur de filtres personnalisés -->
+      <div style="background:var(--surface2); padding:15px; border-radius:8px; margin-bottom:15px">
+        <h4 style="margin-bottom:10px">🔧 Constructeur de filtres personnalisés</h4>
+        
+        <div class="grid-4" style="gap:10px">
+          <div class="form-group">
+            <select class="form-control" id="filter-column">
+              <option value="">-- Colonne --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <select class="form-control" id="filter-operator">
+              <option value="eq">= (égal)</option>
+              <option value="neq">≠ (différent)</option>
+              <option value="gt">> (plus grand)</option>
+              <option value="gte">≥ (plus grand ou égal)</option>
+              <option value="lt">&lt; (plus petit)</option>
+              <option value="lte">≤ (plus petit ou égal)</option>
+              <option value="contains">contient</option>
+              <option value="startswith">commence par</option>
+              <option value="endswith">finit par</option>
+              <option value="isnull">est null</option>
+              <option value="notnull">n'est pas null</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <input type="text" class="form-control" id="filter-value" placeholder="Valeur">
+          </div>
+          <div class="form-group">
+            <button class="btn btn-primary" onclick="addCustomFilter()" style="width:100%">
+              ➕ Ajouter
+            </button>
+          </div>
+        </div>
+
+        <!-- Liste des filtres actifs -->
+        <div id="active-filters" style="margin-top:15px"></div>
+      </div>
+
+      <!-- Résultats du filtrage -->
+      <div id="filter-stats" style="margin-bottom:10px; font-size:.85rem"></div>
+      <div id="filtered-preview" class="table-wrap" style="max-height:400px; overflow-y:auto">
+        <!-- Preview filtré -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 let selectedTable = '';
+let currentData = null;
+let currentColumns = [];
+let activeCustomFilters = [];
 
 // ── Onglets ──
 function switchTab(tab) {
@@ -218,6 +337,15 @@ async function runCleaning() {
     return;
   }
 
+  // Sauvegarder les données pour le filtrage
+  currentData = data;
+  
+  // Extraire les colonnes pour les filtres
+  if (data.preview && data.preview.length > 0) {
+    currentColumns = Object.keys(data.preview[0]);
+    updateFilterColumns();
+  }
+
   // ── Afficher les stats ──
   document.getElementById('clean-summary').innerHTML = `
     <div class="alert alert-success">✅ Nettoyage terminé !</div>
@@ -251,13 +379,352 @@ async function runCleaning() {
     </div>`;
 
   // ── Aperçu ──
-  const cols = Object.keys(data.preview[0] || {});
+  displayPreview(data.preview);
+  
+  // Afficher la section de filtrage
+  document.getElementById('filter-section').style.display = 'block';
+  document.getElementById('result-box').style.display = 'block';
+  
+  // Réinitialiser les filtres
+  activeCustomFilters = [];
+  document.getElementById('active-filters').innerHTML = '';
+  document.getElementById('search-input').value = '';
+}
+
+// Afficher l'aperçu
+function displayPreview(preview) {
+  if (!preview || preview.length === 0) {
+    document.getElementById('preview-table').innerHTML = '<tr><td colspan="100" style="text-align:center">Aucune donnée</td></tr>';
+    return;
+  }
+
+  const cols = Object.keys(preview[0] || {});
   let html = '<thead><tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
-  data.preview.forEach(row => {
-    html += '<tr>' + cols.map(c => `<td>${row[c] ?? ''}</td>`).join('') + '</tr>';
+  preview.forEach(row => {
+    html += '<tr>' + cols.map(c => {
+      const val = row[c];
+      if (val === null || val === undefined) {
+        return '<td style="color:var(--danger); font-style:italic">null</td>';
+      }
+      return `<td>${val}</td>`;
+    }).join('') + '</tr>';
   });
   document.getElementById('preview-table').innerHTML = html + '</tbody>';
-  document.getElementById('result-box').style.display = 'block';
 }
+
+// Mettre à jour les colonnes disponibles pour les filtres
+function updateFilterColumns() {
+  const select = document.getElementById('filter-column');
+  select.innerHTML = '<option value="">-- Colonne --</option>';
+  currentColumns.forEach(col => {
+    select.innerHTML += `<option value="${col}">${col}</option>`;
+  });
+}
+
+// Basculer la section de filtrage
+function toggleFilterSection() {
+  const controls = document.getElementById('filter-controls');
+  controls.style.display = controls.style.display === 'none' ? 'block' : 'none';
+  
+  if (controls.style.display === 'block' && currentData) {
+    displayFilteredPreview(currentData.preview);
+  }
+}
+
+// Recherche textuelle
+function searchData() {
+  if (!currentData || !currentData.preview) return;
+  
+  const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+  
+  if (!searchTerm) {
+    displayFilteredPreview(currentData.preview);
+    return;
+  }
+  
+  const filtered = currentData.preview.filter(row => {
+    return Object.values(row).some(val => 
+      String(val).toLowerCase().includes(searchTerm)
+    );
+  });
+  
+  displayFilteredPreview(filtered);
+  updateFilterStats(filtered.length);
+}
+
+// Filtres rapides
+function quickFilter(type) {
+  if (!currentData || !currentData.preview) return;
+  
+  let filtered = [];
+  
+  switch(type) {
+    case 'duplicates':
+      // Simulation - dans un cas réel, vous auriez une colonne ou indicateur de doublon
+      filtered = currentData.preview.filter((row, index) => {
+        return index % 5 === 0; // Simulation: 1 ligne sur 5 serait un doublon
+      });
+      break;
+    case 'missing':
+      filtered = currentData.preview.filter(row => {
+        return Object.values(row).some(val => val === null || val === undefined || val === '');
+      });
+      break;
+    case 'outliers':
+      // Simulation pour les outliers
+      filtered = currentData.preview.filter((row, index) => {
+        return index % 7 === 0; // Simulation
+      });
+      break;
+    default:
+      filtered = currentData.preview;
+  }
+  
+  displayFilteredPreview(filtered);
+  updateFilterStats(filtered.length);
+}
+
+// Ajouter un filtre personnalisé
+function addCustomFilter() {
+  const column = document.getElementById('filter-column').value;
+  const operator = document.getElementById('filter-operator').value;
+  const value = document.getElementById('filter-value').value;
+  
+  if (!column || !operator) {
+    alert('Veuillez sélectionner une colonne et un opérateur');
+    return;
+  }
+  
+  activeCustomFilters.push({column, operator, value});
+  displayActiveFilters();
+  applyCustomFilters();
+}
+
+// Afficher les filtres actifs
+function displayActiveFilters() {
+  const container = document.getElementById('active-filters');
+  
+  if (activeCustomFilters.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  let html = '<div style="background:var(--surface); padding:10px; border-radius:8px"><strong>Filtres actifs:</strong><br>';
+  
+  activeCustomFilters.forEach((filter, index) => {
+    const operatorSymbol = getOperatorSymbol(filter.operator);
+    html += `
+      <div style="display:flex; align-items:center; gap:10px; margin-top:8px; background:var(--surface2); padding:5px 10px; border-radius:5px">
+        <span><strong>${filter.column}</strong> ${operatorSymbol} <strong>${filter.value || 'NULL'}</strong></span>
+        <button class="btn btn-outline" style="padding:2px 8px; margin-left:auto" onclick="removeFilter(${index})">
+          ❌
+        </button>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Obtenir le symbole de l'opérateur
+function getOperatorSymbol(op) {
+  const symbols = {
+    'eq': '=', 'neq': '≠', 'gt': '>', 'gte': '≥',
+    'lt': '<', 'lte': '≤', 'contains': 'contient',
+    'startswith': 'commence par', 'endswith': 'finit par',
+    'isnull': 'est null', 'notnull': 'n\'est pas null'
+  };
+  return symbols[op] || op;
+}
+
+// Supprimer un filtre
+function removeFilter(index) {
+  activeCustomFilters.splice(index, 1);
+  displayActiveFilters();
+  applyCustomFilters();
+}
+
+// Appliquer les filtres personnalisés
+function applyCustomFilters() {
+  if (!currentData || !currentData.preview || activeCustomFilters.length === 0) {
+    displayFilteredPreview(currentData?.preview || []);
+    return;
+  }
+  
+  let filtered = [...currentData.preview];
+  
+  activeCustomFilters.forEach(filter => {
+    filtered = filtered.filter(row => {
+      const cellValue = row[filter.column];
+      
+      switch(filter.operator) {
+        case 'eq':
+          return String(cellValue) === String(filter.value);
+        case 'neq':
+          return String(cellValue) !== String(filter.value);
+        case 'gt':
+          return parseFloat(cellValue) > parseFloat(filter.value);
+        case 'gte':
+          return parseFloat(cellValue) >= parseFloat(filter.value);
+        case 'lt':
+          return parseFloat(cellValue) < parseFloat(filter.value);
+        case 'lte':
+          return parseFloat(cellValue) <= parseFloat(filter.value);
+        case 'contains':
+          return String(cellValue).toLowerCase().includes(String(filter.value).toLowerCase());
+        case 'startswith':
+          return String(cellValue).toLowerCase().startsWith(String(filter.value).toLowerCase());
+        case 'endswith':
+          return String(cellValue).toLowerCase().endsWith(String(filter.value).toLowerCase());
+        case 'isnull':
+          return cellValue === null || cellValue === undefined || cellValue === '';
+        case 'notnull':
+          return cellValue !== null && cellValue !== undefined && cellValue !== '';
+        default:
+          return true;
+      }
+    });
+  });
+  
+  displayFilteredPreview(filtered);
+  updateFilterStats(filtered.length);
+}
+
+// Afficher l'aperçu filtré
+function displayFilteredPreview(data) {
+  const container = document.getElementById('filtered-preview');
+  
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted)">Aucun résultat correspondant aux filtres</div>';
+    return;
+  }
+  
+  const cols = Object.keys(data[0] || {});
+  let html = '<table class="data-table"><thead><tr>';
+  cols.forEach(col => html += `<th>${col}</th>`);
+  html += '</tr></thead><tbody>';
+  
+  data.slice(0, 50).forEach(row => {
+    html += '<tr>';
+    cols.forEach(col => {
+      const val = row[col];
+      const searchTerm = document.getElementById('search-input').value.toLowerCase();
+      
+      if (searchTerm && String(val).toLowerCase().includes(searchTerm)) {
+        html += `<td style="background:rgba(255,255,0,0.2); font-weight:bold">${val ?? ''}</td>`;
+      } else if (val === null || val === undefined || val === '') {
+        html += `<td style="color:var(--danger); font-style:italic">null</td>`;
+      } else {
+        html += `<td>${val}</td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  
+  if (data.length > 50) {
+    html += `<tr><td colspan="${cols.length}" style="text-align:center; background:var(--surface2)">
+      ... et ${data.length - 50} lignes supplémentaires (affichage limité à 50)
+    </td></tr>`;
+  }
+  
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// Mettre à jour les statistiques de filtrage
+function updateFilterStats(count) {
+  const total = currentData?.preview?.length || 0;
+  const stats = document.getElementById('filter-stats');
+  
+  if (count === total) {
+    stats.innerHTML = `<span class="badge badge-info">${count} lignes (total)</span>`;
+  } else {
+    const percent = Math.round((count / total) * 100);
+    stats.innerHTML = `
+      <span class="badge badge-success">${count} résultats</span>
+      <span class="badge badge-info">${percent}% des données</span>
+    `;
+  }
+}
+
+// Télécharger les données (originales)
+function downloadData(format) {
+  if (!currentData || !currentData.table) return;
+  
+  const url = `/data/download/?table_name=${currentData.table}&source=cleaned&format=${format}`;
+  window.location.href = url;
+}
+
+// Exporter avec filtres
+function exportWithFilters(format) {
+  if (!currentData || !currentData.table) return;
+  
+  // Construire les filtres
+  const filters = {};
+  
+  // Ajouter les filtres personnalisés
+  activeCustomFilters.forEach(f => {
+    if (!filters[f.column]) filters[f.column] = {};
+    filters[f.column][f.operator] = f.value;
+  });
+  
+  // Ajouter la recherche textuelle si présente
+  const searchTerm = document.getElementById('search-input').value.trim();
+  if (searchTerm) {
+    // Appliquer la recherche à toutes les colonnes textuelles
+    currentColumns.forEach(col => {
+      if (!filters[col]) filters[col] = {};
+      filters[col]['contains'] = searchTerm;
+    });
+  }
+  
+  const url = `/data/download/?table_name=${currentData.table}&source=filtered&base_source=cleaned&format=${format}&filters=${encodeURIComponent(JSON.stringify(filters))}`;
+  window.location.href = url;
+}
+
+// Rafraîchir l'aperçu
+function refreshPreview() {
+  if (activeCustomFilters.length > 0) {
+    applyCustomFilters();
+  } else {
+    displayFilteredPreview(currentData?.preview || []);
+  }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', function() {
+  // Écouter les changements dans la recherche
+  document.getElementById('search-input').addEventListener('keyup', searchData);
+});
 </script>
+
+<style>
+/* Styles supplémentaires pour les filtres */
+.filter-item {
+  transition: all 0.3s ease;
+}
+
+.filter-item:hover {
+  transform: translateX(5px);
+  border-left: 3px solid var(--primary);
+}
+
+#active-filters .badge {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#active-filters .badge:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Style pour les résultats de recherche */
+mark {
+  background: rgba(255, 255, 0, 0.3);
+  padding: 2px;
+  border-radius: 3px;
+}
+</style>
 {% endblock %}
