@@ -1,5 +1,3 @@
-# agents/extraction_agent.py - AJOUTER CES MÉTHODES
-
 import sys
 import os
 import re
@@ -28,7 +26,7 @@ class ExtractionAgent:
     def __init__(self, db_type, db_name):
         self.db_type = db_type
         self.db_name = db_name
-        self.engine  = self.connect_to_db()
+        self.engine = self.connect_to_db()
 
     def connect_to_db(self):
         if self.db_type == "mysql":
@@ -93,7 +91,7 @@ class ExtractionAgent:
         return f"All tables extracted to {file_path}"
 
     # ============================================================
-    #  NOUVELLES MÉTHODES POUR LLM AVEC PROMPTS INTELLIGENTS
+    #  MÉTHODES LLM
     # ============================================================
 
     def _check_ollama(self):
@@ -147,7 +145,111 @@ class ExtractionAgent:
         return fallback_list
 
     # ============================================================
-    #  LLM POUR CHOISIR LES TABLES À EXTRAIRE
+    #  MÉTHODE EXTRACT_WITH_OLLAMA_TO_CSV
+    # ============================================================
+
+    def extract_with_ollama_to_csv(self, file_path):
+        """
+        Utilise Ollama pour choisir les tables à extraire
+        Version robuste avec fallback si Ollama n'est pas disponible
+        """
+        print(f"[INFO] extract_with_ollama_to_csv appelé avec file_path={file_path}")
+        
+        # 1. Récupérer la liste des tables
+        try:
+            tables_df = self.get_all_tables()
+            if tables_df.empty or 'TABLE_NAME' not in tables_df.columns:
+                table_list = []
+            else:
+                table_list = tables_df['TABLE_NAME'].tolist()
+            print(f"[INFO] Tables trouvées: {table_list}")
+        except Exception as e:
+            print(f"[ERROR] Erreur récupération tables: {e}")
+            table_list = ["customers", "orders", "products", "employees"]  # Fallback
+
+        if not table_list:
+            table_list = ["customers", "orders", "products", "employees"]  # Fallback
+
+        # 2. Vérifier si Ollama est disponible
+        if not OLLAMA_OK:
+            print("[WARN] Ollama non installé - utilisation du mode fallback")
+            # Mode fallback : prendre les 3 premières tables
+            tables_to_clean = table_list[:min(3, len(table_list))]
+            raw_text = "Ollama non disponible - sélection automatique des 3 premières tables"
+        else:
+            try:
+                print("[INFO] Appel à Ollama...")
+                # Appeler le LLM
+                model = ChatOllama(model="llama2", temperature=0)
+
+                messages = [
+                    SystemMessage(content="""
+You are a data quality expert.
+Your task is to analyze database table names and decide which ones may require data cleaning.
+Return ONLY a valid Python list of table names, nothing else.
+Example of valid response: ["customers", "orders"]
+Do not add any explanation, just the list.
+"""),
+                    HumanMessage(
+                        content=f"The database contains these tables: {table_list}. "
+                                f"Which tables should be cleaned? Return only a Python list."
+                    )
+                ]
+
+                response = model.invoke(messages)
+                raw_text = response.content.strip()
+                print(f"[INFO] Réponse Ollama: {raw_text}")
+
+                # Parser la réponse
+                tables_to_clean = self._parse_llm_list(raw_text, table_list)
+
+            except Exception as e:
+                print(f"[ERROR] Erreur Ollama: {e}")
+                tables_to_clean = table_list[:min(3, len(table_list))]
+                raw_text = f"Erreur Ollama: {e}"
+
+        # 3. Extraire les tables choisies
+        os.makedirs(file_path, exist_ok=True)
+        extracted = []
+
+        for table in tables_to_clean:
+            try:
+                print(f"[INFO] Extraction de la table: {table}")
+                if table in table_list:
+                    df = self.extract_table(table)
+                    csv_path = f"{file_path}/{table}.csv"
+                    df.to_csv(csv_path, index=False)
+                    extracted.append(table)
+                    print(f"[INFO] Table extraite avec succès: {table} ({len(df)} lignes)")
+                else:
+                    print(f"[WARN] Table '{table}' suggérée mais introuvable dans la BDD")
+            except Exception as e:
+                print(f"[ERROR] Erreur extraction {table}: {e}")
+
+        # 4. Fallback si aucune table n'a été extraite
+        if not extracted:
+            print("[WARN] Aucune table extraite - extraction de toutes les tables")
+            for table in table_list:
+                try:
+                    df = self.extract_table(table)
+                    csv_path = f"{file_path}/{table}.csv"
+                    df.to_csv(csv_path, index=False)
+                    extracted.append(table)
+                    print(f"[INFO] Table extraite: {table}")
+                except Exception as e:
+                    print(f"[ERROR] Erreur extraction {table}: {e}")
+
+        # 5. Retourner le résultat
+        return {
+            "tables_in_db": table_list,
+            "tables_chosen": tables_to_clean,
+            "extracted_tables": extracted,
+            "llm_raw_response": raw_text,
+            "total_extracted": len(extracted)
+        }
+
+    # ============================================================
+    #  AUTRES MÉTHODES LLM
     # ============================================================
 
     def select_tables_with_llm(self, prompt_custom=None):
@@ -239,10 +341,6 @@ Return only a Python list.
             "llm_raw_response": selection["llm_raw_response"],
             "prompt_used": selection["prompt_used"]
         }
-
-    # ============================================================
-    #  LLM POUR FILTRER LES DONNÉES AVEC PROMPT
-    # ============================================================
 
     def generate_filter_conditions(self, table_name, prompt_custom=None):
         """
@@ -423,10 +521,6 @@ Return only the JSON object with filters.
                 "filter_result": filter_result
             }
 
-    # ============================================================
-    #  LLM POUR ANALYSE COMPLÈTE AVEC PROMPT
-    # ============================================================
-
     def analyze_with_llm(self, prompt):
         """
         Analyse complète : le LLM décide quoi extraire ET comment filtrer
@@ -437,7 +531,7 @@ Return only the JSON object with filters.
 
         # 2. Récupérer les schémas de toutes les tables
         schemas = {}
-        for table in all_tables[:5]:  # Limiter à 5 tables pour éviter de surcharger
+        for table in all_tables[:5]:  # Limiter à 5 tables
             try:
                 schema_df = self.extract_table_schema(table)
                 schemas[table] = [
@@ -451,7 +545,7 @@ Return only the JSON object with filters.
         schema_text = ""
         for table, cols in schemas.items():
             schema_text += f"\n{table}:\n"
-            for col in cols[:10]:  # Limiter à 10 colonnes par table
+            for col in cols[:10]:
                 schema_text += f"  - {col}\n"
 
         system_prompt = """
